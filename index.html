@@ -1,65 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Font Generator Free</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
-    h1 { text-align: center; margin-bottom: 20px; color: #333; }
-    .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    textarea { width: 100%; height: 100px; padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; }
-    .fonts { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-    .font-card { background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; padding: 15px; }
-    .font-card h3 { font-size: 12px; color: #999; margin-bottom: 8px; }
-    .font-card p { font-size: 20px; word-break: break-all; cursor: pointer; }
-    .font-card p:hover { color: #007bff; }
-    .copy-hint { font-size: 11px; color: #aaa; margin-top: 5px; }
-    label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO 优化 TDK -->
+    <title>Free Font Generator - Copy and Paste Fancy Text for Instagram & TikTok</title>
+    <meta name="description" content="Generate cool, fancy, and aesthetic fonts instantly. Copy and paste stylish text for your Instagram bio, TikTok, Twitter, and gaming nicknames. 100% Free.">
+    <meta name="keywords" content="font generator, fancy text, instagram fonts, copy and paste fonts, cool text generator">
+    <link rel="canonical" href="https://your-domain.com/" />
+
+    <!-- 引入 Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入自定义样式 -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="container">
-    <h1>✨ Font Generator Free</h1>
-    <label for="input">Enter your text:</label>
-    <textarea id="input" placeholder="Type something here..." oninput="generate()">Hello World</textarea>
-    <div class="fonts" id="output"></div>
-  </div>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
-  <script>
-    const styles = [
-      { name: "Bold", fn: s => s.replace(/[a-zA-Z]/g, c => String.fromCodePoint(c.charCodeAt(0) + (c >= 'a' ? 0x1D41A - 97 : 0x1D400 - 65))) },
-      { name: "Italic", fn: s => s.replace(/[a-zA-Z]/g, c => String.fromCodePoint(c.charCodeAt(0) + (c >= 'a' ? 0x1D44E - 97 : 0x1D434 - 65))) },
-      { name: "Bold Italic", fn: s => s.replace(/[a-zA-Z]/g, c => String.fromCodePoint(c.charCodeAt(0) + (c >= 'a' ? 0x1D482 - 97 : 0x1D468 - 65))) },
-      { name: "Script", fn: s => s.replace(/[a-zA-Z]/g, c => String.fromCodePoint(c.charCodeAt(0) + (c >= 'a' ? 0x1D4B6 - 97 : 0x1D49C - 65))) },
-      { name: "Double Struck", fn: s => s.replace(/[a-zA-Z]/g, c => String.fromCodePoint(c.charCodeAt(0) + (c >= 'a' ? 0x1D552 - 97 : 0x1D538 - 65))) },
-      { name: "Monospace", fn: s => s.replace(/[a-zA-Z0-9]/g, c => String.fromCodePoint(c.charCodeAt(0) + (c >= 'a' ? 0x1D670 - 97 : c >= 'A' ? 0x1D670 - 65 + 26 : 0x1D7F6 - 48))) },
-      { name: "Circled", fn: s => s.replace(/[a-zA-Z]/g, c => String.fromCodePoint(c >= 'a' ? 0x24D0 + c.charCodeAt(0) - 97 : 0x24B6 + c.charCodeAt(0) - 65)) },
-      { name: "Fullwidth", fn: s => s.replace(/[!-~]/g, c => String.fromCodePoint(c.charCodeAt(0) + 0xFF01 - 33)) },
-    ];
+    <!-- Header -->
+    <header class="bg-white shadow-sm py-6 mb-8 text-center px-4">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-2">
+            Font Generator Free
+        </h1>
+        <h2 class="text-gray-500 text-sm md:text-base">Instantly generate cool fancy text. Copy & Paste anywhere!</h2>
+    </header>
 
-    function generate() {
-      const text = document.getElementById('input').value || '';
-      const out = document.getElementById('output');
-      out.innerHTML = styles.map(st => {
-        const converted = st.fn(text);
-        return `<div class="font-card">
-          <h3>${st.name}</h3>
-          <p onclick="copy('${converted.replace(/'/g,"\\'")}', this)">${converted}</p>
-          <div class="copy-hint">Click to copy</div>
-        </div>`;
-      }).join('');
-    }
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 max-w-4xl">
+        <!-- Text Input Area -->
+        <section class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 relative">
+            <textarea
+                id="textInput"
+                class="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-lg transition-all"
+                placeholder="Type your text here to see the magic..."
+                autofocus></textarea>
+            <button
+                id="clearBtn"
+                class="absolute top-8 right-8 text-gray-400 hover:text-red-500 transition-colors hidden"
+                title="Clear text">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </section>
 
-    function copy(text, el) {
-      navigator.clipboard.writeText(text).then(() => {
-        el.style.color = '#28a745';
-        setTimeout(() => el.style.color = '', 1000);
-      });
-    }
+        <!-- Results Display Area -->
+        <section id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12">
+            <!-- 结果卡片将通过 JavaScript 动态生成在这里 -->
+        </section>
+    </main>
 
-    generate();
-  </script>
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6 text-center text-gray-500 text-sm mt-auto">
+        <p>© <span id="year"></span> Font Generator Free. All rights reserved.</p>
+    </footer>
+
+    <!-- Toast Notification (复制成功提示) -->
+    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+        <span id="toastText">Copied to clipboard!</span>
+    </div>
+
+    <!-- 引入自定义脚本 -->
+    <script src="script.js"></script>
 </body>
 </html>

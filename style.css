@@ -1,0 +1,34 @@
+/* 自定义滚动条美化 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* 文本框选中时的背景色 */
+::selection {
+    background-color: #bfdbfe;
+    color: #1e3a8a;
+}
+
+/* Toast 显示类 */
+.toast-visible {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* 防止特定字体被浏览器错误折行 */
+.font-result-text {
+    word-break: break-word;
+    white-space: pre-wrap;
+}
