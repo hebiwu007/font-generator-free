@@ -3,35 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- SEO 优化 TDK -->
     <title>Free Font Generator - Copy and Paste Fancy Text for Instagram & TikTok</title>
     <meta name="description" content="Generate cool, fancy, and aesthetic fonts instantly. Copy and paste stylish text for your Instagram bio, TikTok, Twitter, and gaming nicknames. 100% Free.">
     <meta name="keywords" content="font generator, fancy text, instagram fonts, copy and paste fonts, cool text generator">
     <link rel="canonical" href="https://fontgeneratorfree.online/" />
 
-    <!-- 必须在 GIS 脚本之前定义回调，确保 GIS 加载完后能找到它 -->
-    <script>
-        window.onGoogleLibraryLoad = function() {
-            if (typeof initGoogleSignIn === 'function') {
-                initGoogleSignIn();
-            }
-        };
-    </script>
-
-    <!-- Google Identity Services (OAuth) -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-    <!-- 引入 Tailwind CSS (CDN) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入自定义样式 -->
+    <!-- 自定义样式 -->
     <link rel="stylesheet" href="style.css">
+
+    <!-- Auth 模块：放 head 里提前加载，让函数定义早于 GIS 回调 -->
+    <script src="auth.js"></script>
+
+    <!-- Google Identity Services：放 auth.js 之后，GIS 加载完时 auth.js 已就绪 -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
     <!-- Header -->
     <header class="bg-white shadow-sm py-4 mb-8 px-4">
         <div class="container mx-auto max-w-4xl flex items-center justify-between flex-wrap gap-3">
-            <!-- 标题区域 -->
+            <!-- 标题 -->
             <div class="text-center flex-1">
                 <h1 class="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-1">
                     Font Generator Free
@@ -41,22 +34,17 @@
 
             <!-- Auth 区域 -->
             <div class="flex items-center gap-3 flex-shrink-0">
-                <!-- Google 登录按钮容器：由 JS 动态渲染进来 -->
-                <div id="auth-login-btn">
-                    <!-- GIS renderButton 会把按钮注入这里 -->
-                </div>
+                <!-- Google 登录按钮容器，GIS renderButton 将注入到这里 -->
+                <div id="auth-login-btn"></div>
 
-                <!-- 用户信息 (已登录时显示) -->
+                <!-- 已登录用户信息（默认隐藏） -->
                 <div id="auth-user-info" style="display:none;" class="flex items-center gap-2">
-                    <img id="auth-user-avatar"
-                         src=""
-                         alt="User avatar"
+                    <img id="auth-user-avatar" src="" alt="User avatar"
                          class="w-8 h-8 rounded-full object-cover border-2 border-blue-200">
-                    <span id="auth-user-name" class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
-                    <button
-                        onclick="signOut()"
-                        class="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
-                        title="Sign out">
+                    <span id="auth-user-name"
+                          class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
+                    <button onclick="signOut()"
+                            class="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50">
                         Sign out
                     </button>
                 </div>
@@ -64,29 +52,24 @@
         </div>
     </header>
 
-    <!-- Main Content -->
+    <!-- Main -->
     <main class="flex-grow container mx-auto px-4 max-w-4xl">
-        <!-- Text Input Area -->
         <section class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 relative">
             <textarea
                 id="textInput"
                 class="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-lg transition-all"
                 placeholder="Type your text here to see the magic..."
                 autofocus></textarea>
-            <button
-                id="clearBtn"
-                class="absolute top-8 right-8 text-gray-400 hover:text-red-500 transition-colors hidden"
-                title="Clear text">
+            <button id="clearBtn"
+                    class="absolute top-8 right-8 text-gray-400 hover:text-red-500 transition-colors hidden"
+                    title="Clear text">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </section>
 
-        <!-- Results Display Area -->
-        <section id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12">
-            <!-- 结果卡片将通过 JavaScript 动态生成在这里 -->
-        </section>
+        <section id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12"></section>
     </main>
 
     <!-- Footer -->
@@ -94,7 +77,7 @@
         <p>© <span id="year"></span> Font Generator Free. All rights reserved.</p>
     </footer>
 
-    <!-- Toast Notification (复制成功提示) -->
+    <!-- Toast -->
     <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50 flex items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
@@ -102,9 +85,7 @@
         <span id="toastText">Copied to clipboard!</span>
     </div>
 
-    <!-- 引入 Auth 模块（必须在 GIS 之后，body 底部） -->
-    <script src="auth.js"></script>
-    <!-- 引入自定义脚本 -->
+    <!-- 字体生成脚本 -->
     <script src="script.js"></script>
 </body>
 </html>
