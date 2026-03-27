@@ -32,27 +32,13 @@
 
             <!-- Auth 区域 -->
             <div class="flex items-center gap-3 flex-shrink-0">
-                <!-- Google 登录按钮 (未登录时显示) -->
-                <div id="auth-login-btn" style="display:none;">
-                    <!-- Google One Tap / 自定义登录按钮 -->
-                    <div id="g_id_onload"
-                         data-client_id="1070692973169-kh4nort1uo59s8oq2159dqn6pc0cfp6e.apps.googleusercontent.com"
-                         data-callback="handleCredentialResponse"
-                         data-auto_select="false"
-                         data-cancel_on_tap_outside="true">
-                    </div>
-                    <div class="g_id_signin"
-                         data-type="standard"
-                         data-shape="pill"
-                         data-theme="outline"
-                         data-text="sign_in_with"
-                         data-size="medium"
-                         data-logo_alignment="left">
-                    </div>
+                <!-- Google 登录按钮容器：由 JS 动态渲染进来 -->
+                <div id="auth-login-btn">
+                    <!-- GIS renderButton 会把按钮注入这里 -->
                 </div>
 
                 <!-- 用户信息 (已登录时显示) -->
-                <div id="auth-user-info" class="hidden items-center gap-2" style="display:none;">
+                <div id="auth-user-info" style="display:none;" class="flex items-center gap-2">
                     <img id="auth-user-avatar"
                          src=""
                          alt="User avatar"
@@ -107,19 +93,9 @@
         <span id="toastText">Copied to clipboard!</span>
     </div>
 
-    <!-- 引入 Auth 模块 -->
+    <!-- 引入 Auth 模块（必须在 GIS 之后，body 底部） -->
     <script src="auth.js"></script>
     <!-- 引入自定义脚本 -->
     <script src="script.js"></script>
-
-    <!-- 初始化 Auth -->
-    <script>
-        // 等待 DOM 完全加载后初始化
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initAuth);
-        } else {
-            initAuth();
-        }
-    </script>
 </body>
 </html>
