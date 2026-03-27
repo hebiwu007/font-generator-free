@@ -9,6 +9,15 @@
     <meta name="keywords" content="font generator, fancy text, instagram fonts, copy and paste fonts, cool text generator">
     <link rel="canonical" href="https://fontgeneratorfree.online/" />
 
+    <!-- 必须在 GIS 脚本之前定义回调，确保 GIS 加载完后能找到它 -->
+    <script>
+        window.onGoogleLibraryLoad = function() {
+            if (typeof initGoogleSignIn === 'function') {
+                initGoogleSignIn();
+            }
+        };
+    </script>
+
     <!-- Google Identity Services (OAuth) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 

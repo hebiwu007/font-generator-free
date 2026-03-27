@@ -153,10 +153,7 @@ function initGoogleSignIn() {
     showLoginButton();
 }
 
-// ── 官方推荐：通过 window.onGoogleLibraryLoad 钩子触发初始化 ──────────────
-// GIS async 脚本加载完成后会自动调用此函数
-window.onGoogleLibraryLoad = initGoogleSignIn;
-
-// 暴露给 HTML 调用
+// 暴露给全局调用
+window.initGoogleSignIn = initGoogleSignIn;
 window.signOut = signOut;
 window.handleCredentialResponse = handleCredentialResponse;
