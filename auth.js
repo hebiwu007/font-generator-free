@@ -1,14 +1,18 @@
 /**
  * auth.js - Google OAuth 认证模块
  * 使用 Google Identity Services (GIS) renderButton 模式
- * 适用于纯前端/静态网站（Cloudflare Pages，无后端）
+ *
+ * 正确执行顺序：
+ *   1. auth.js 在 <head> 同步加载 → 只定义函数，不操作 DOM
+ *   2. DOMContentLoaded 触发 → DOM 就绪，启动 GIS 等待轮询
+ *   3. GIS async 加载完 → 轮询检测到 → renderButton() 注入按钮
  */
 
 var GOOGLE_CLIENT_ID = '1070692973169-kh4nort1uo59s8oq2159dqn6pc0cfp6e.apps.googleusercontent.com';
 
 // ─── JWT 工具 ────────────────────────────────────────────────────────────────
 
-function parseJwt(token) {
+function fg_parseJwt(token) {
     try {
         var raw = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
         return JSON.parse(atob(raw));
@@ -17,125 +21,102 @@ function parseJwt(token) {
     }
 }
 
-function validateJwtBasic(payload) {
+function fg_validateJwt(payload) {
     if (!payload) return false;
     var now = Math.floor(Date.now() / 1000);
     if (payload.exp && payload.exp < now) return false;
     if (payload.aud !== GOOGLE_CLIENT_ID) return false;
-    var validIssuers = ['https://accounts.google.com', 'accounts.google.com'];
-    if (validIssuers.indexOf(payload.iss) === -1) return false;
+    if (['https://accounts.google.com', 'accounts.google.com'].indexOf(payload.iss) === -1) return false;
     return true;
 }
 
 // ─── 会话管理 ────────────────────────────────────────────────────────────────
 
-var SESSION_KEY = 'fg_user_session';
+var FG_SESSION_KEY = 'fg_user_session';
 
-function saveSession(user, idToken) {
-    try {
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ user: user, idToken: idToken }));
-    } catch (e) {}
+function fg_saveSession(user, idToken) {
+    try { sessionStorage.setItem(FG_SESSION_KEY, JSON.stringify({ user: user, idToken: idToken })); } catch (e) {}
 }
 
-function loadSession() {
+function fg_loadSession() {
     try {
-        var raw = sessionStorage.getItem(SESSION_KEY);
+        var raw = sessionStorage.getItem(FG_SESSION_KEY);
         if (!raw) return null;
-        var session = JSON.parse(raw);
-        if (!validateJwtBasic(parseJwt(session.idToken))) {
-            sessionStorage.removeItem(SESSION_KEY);
-            return null;
-        }
-        return session;
-    } catch (e) {
-        return null;
-    }
+        var s = JSON.parse(raw);
+        if (!fg_validateJwt(fg_parseJwt(s.idToken))) { sessionStorage.removeItem(FG_SESSION_KEY); return null; }
+        return s;
+    } catch (e) { return null; }
 }
 
-// ─── UI 控制 ─────────────────────────────────────────────────────────────────
+// ─── UI（只在 DOM 就绪后调用）───────────────────────────────────────────────
 
-function showLoginButton() {
+function fg_showLogin() {
     var btn = document.getElementById('auth-login-btn');
     var info = document.getElementById('auth-user-info');
     if (btn) btn.style.display = '';
     if (info) info.style.display = 'none';
 }
 
-function showUserInfo(user) {
+function fg_showUser(user) {
     var btn = document.getElementById('auth-login-btn');
     var info = document.getElementById('auth-user-info');
-    if (btn) btn.style.display = 'none';
-    if (info) info.style.display = 'flex';
     var nameEl = document.getElementById('auth-user-name');
     var avatarEl = document.getElementById('auth-user-avatar');
+    if (btn) btn.style.display = 'none';
+    if (info) info.style.display = 'flex';
     if (nameEl) nameEl.textContent = user.name || user.email || '';
-    if (avatarEl && user.picture) {
-        avatarEl.src = user.picture;
-        avatarEl.alt = user.name || 'User';
-    }
+    if (avatarEl && user.picture) { avatarEl.src = user.picture; avatarEl.alt = user.name || 'User'; }
 }
 
 // ─── Toast ───────────────────────────────────────────────────────────────────
 
-function showToast(message, type) {
-    var toast = document.getElementById('toast');
-    var toastText = document.getElementById('toastText');
-    if (!toast || !toastText) return;
-    toast.classList.remove('toast-error', 'toast-info');
-    if (type === 'error') toast.classList.add('toast-error');
-    if (type === 'info') toast.classList.add('toast-info');
-    toastText.textContent = message;
-    toast.classList.add('toast-visible');
-    clearTimeout(window._toastTimer);
-    window._toastTimer = setTimeout(function() {
-        toast.classList.remove('toast-visible', 'toast-error', 'toast-info');
+function fg_toast(msg, type) {
+    var el = document.getElementById('toast');
+    var txt = document.getElementById('toastText');
+    if (!el || !txt) return;
+    el.classList.remove('toast-error', 'toast-info');
+    if (type === 'error') el.classList.add('toast-error');
+    if (type === 'info') el.classList.add('toast-info');
+    txt.textContent = msg;
+    el.classList.add('toast-visible');
+    clearTimeout(window._fg_toastTimer);
+    window._fg_toastTimer = setTimeout(function () {
+        el.classList.remove('toast-visible', 'toast-error', 'toast-info');
     }, 3000);
 }
 
-// ─── 登录回调 ─────────────────────────────────────────────────────────────────
+// ─── 登录回调（挂到 window，供 GIS 调用）────────────────────────────────────
 
-function handleCredentialResponse(response) {
-    var payload = parseJwt(response.credential);
-    if (!validateJwtBasic(payload)) {
-        showToast('Login failed. Please try again.', 'error');
-        return;
-    }
-    var user = {
-        sub: payload.sub,
-        email: payload.email,
-        name: payload.name,
-        picture: payload.picture,
-    };
-    saveSession(user, response.credential);
-    showUserInfo(user);
-    showToast('Welcome, ' + (user.name || user.email) + '! 🎉', 'success');
-}
+window.handleCredentialResponse = function (response) {
+    var payload = fg_parseJwt(response.credential);
+    if (!fg_validateJwt(payload)) { fg_toast('Login failed. Please try again.', 'error'); return; }
+    var user = { sub: payload.sub, email: payload.email, name: payload.name, picture: payload.picture };
+    fg_saveSession(user, response.credential);
+    fg_showUser(user);
+    fg_toast('Welcome, ' + (user.name || user.email) + '! 🎉');
+};
 
 // ─── 退出登录 ─────────────────────────────────────────────────────────────────
 
-function signOut() {
-    sessionStorage.removeItem(SESSION_KEY);
-    try {
-        if (window.google && google.accounts && google.accounts.id) {
-            google.accounts.id.disableAutoSelect();
-        }
-    } catch (e) {}
-    showLoginButton();
-    showToast('Signed out successfully.', 'info');
-}
+window.signOut = function () {
+    sessionStorage.removeItem(FG_SESSION_KEY);
+    try { if (window.google) google.accounts.id.disableAutoSelect(); } catch (e) {}
+    fg_showLogin();
+    fg_toast('Signed out.', 'info');
+};
 
-// ─── 核心初始化：渲染 Google 登录按钮 ────────────────────────────────────────
+// ─── GIS 渲染按钮 ─────────────────────────────────────────────────────────────
 
-function renderGoogleButton() {
+function fg_renderButton() {
+    var container = document.getElementById('auth-login-btn');
+    if (!container) { console.error('[Auth] #auth-login-btn not found'); return; }
+
     google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse,
+        callback: window.handleCredentialResponse,
         auto_select: false,
-        cancel_on_tap_outside: true,
+        cancel_on_tap_outside: true
     });
-
-    var container = document.getElementById('auth-login-btn');
-    if (!container) return;
 
     google.accounts.id.renderButton(container, {
         type: 'standard',
@@ -143,42 +124,47 @@ function renderGoogleButton() {
         size: 'large',
         shape: 'pill',
         text: 'signin_with',
-        logo_alignment: 'left',
+        logo_alignment: 'left'
     });
+
+    console.log('[Auth] Google Sign-In button rendered ✅');
 }
 
-// ─── 入口：等 DOM 和 GIS 都就绪后初始化 ──────────────────────────────────────
+// ─── 主入口：DOM 就绪后才启动 ─────────────────────────────────────────────────
 
-function startAuth() {
-    // 已有会话，直接显示用户信息
-    var session = loadSession();
+function fg_init() {
+    console.log('[Auth] DOM ready, starting auth init...');
+
+    // 如果已有会话，直接显示用户
+    var session = fg_loadSession();
     if (session) {
-        showUserInfo(session.user);
+        console.log('[Auth] Existing session found:', session.user.email);
+        fg_showUser(session.user);
         return;
     }
 
-    // 等待 GIS 库就绪（轮询，最多等 10 秒）
+    // GIS 已加载（缓存命中时可能已就绪）
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+        console.log('[Auth] GIS already loaded, rendering button immediately');
+        fg_renderButton();
+        return;
+    }
+
+    // 等待 GIS 加载（轮询，最多 10s）
+    console.log('[Auth] Waiting for GIS library...');
     var attempts = 0;
-    var maxAttempts = 100; // 100 * 100ms = 10s
-    var timer = setInterval(function() {
+    var timer = setInterval(function () {
         attempts++;
         if (window.google && window.google.accounts && window.google.accounts.id) {
             clearInterval(timer);
-            renderGoogleButton();
-        } else if (attempts >= maxAttempts) {
+            console.log('[Auth] GIS loaded after ' + (attempts * 100) + 'ms, rendering button');
+            fg_renderButton();
+        } else if (attempts >= 100) {
             clearInterval(timer);
-            console.warn('[Auth] Google GIS library failed to load after 10s');
+            console.error('[Auth] GIS failed to load after 10s. Check network / ad blocker.');
         }
     }, 100);
 }
 
-// DOM 就绪后执行
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startAuth);
-} else {
-    startAuth();
-}
-
-// 暴露给全局
-window.signOut = signOut;
-window.handleCredentialResponse = handleCredentialResponse;
+// 确保在 DOM 就绪后执行（auth.js 在 <head> 同步加载，DOM 尚未解析）
+document.addEventListener('DOMContentLoaded', fg_init);
