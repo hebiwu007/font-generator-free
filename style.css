@@ -32,3 +32,35 @@
     word-break: break-word;
     white-space: pre-wrap;
 }
+
+/* ─── Google Auth 区域 ─────────────────────────── */
+
+/* Google 登录按钮容器对齐 */
+#auth-login-btn {
+    display: flex;
+    align-items: center;
+}
+
+/* 已登录用户信息区域 */
+#auth-user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 用户头像动画 */
+#auth-user-avatar {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+#auth-user-avatar:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px #bfdbfe;
+}
+
+/* Toast 多状态颜色 */
+#toast.toast-error {
+    background-color: #ef4444;
+}
+#toast.toast-info {
+    background-color: #3b82f6;
+}
