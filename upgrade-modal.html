@@ -1,0 +1,46 @@
+<!-- 升级到 Pro 弹窗（添加到 index.html body 底部） -->
+<div id="upgrade-modal" style="display:none;" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-8 relative">
+        <button onclick="closeUpgradeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+        
+        <div class="text-center mb-6">
+            <div class="text-5xl mb-4">⭐</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Upgrade to Pro</h3>
+            <p class="text-gray-600">Unlock powerful features and save your work</p>
+        </div>
+
+        <div class="space-y-3 mb-6">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                </svg>
+                <span class="text-gray-700">Save unlimited history</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                </svg>
+                <span class="text-gray-700">Batch text conversion</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                </svg>
+                <span class="text-gray-700">Export as image/PDF</span>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <button class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition">
+                $2.99/month
+            </button>
+            <button class="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition">
+                $9.99 Lifetime
+            </button>
+        </div>
+    </div>
+</div>
