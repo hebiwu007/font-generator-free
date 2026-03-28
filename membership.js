@@ -3,7 +3,7 @@
  * 处理会员状态显示、升级引导、历史记录
  */
 
-const API_BASE = 'https://font-generator-api.YOUR_ACCOUNT.workers.dev';
+const API_BASE = 'https://font-generator-api.hebiwu007.workers.dev';
 
 // 全局会员状态
 let membershipStatus = {

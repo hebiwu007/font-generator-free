@@ -94,6 +94,10 @@ window.handleCredentialResponse = function (response) {
     fg_saveSession(user, response.credential);
     fg_showUser(user);
     fg_toast('Welcome, ' + (user.name || user.email) + '! 🎉');
+    // 同步用户到后端
+    if (typeof syncUserToBackend === 'function') {
+        syncUserToBackend(user, response.credential);
+    }
 };
 
 // ─── 退出登录 ─────────────────────────────────────────────────────────────────
