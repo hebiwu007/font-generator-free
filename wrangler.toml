@@ -10,5 +10,6 @@ database_id = "c79d9000-aec4-4ec2-9e01-fa63a5907a9b"
 
 # 环境变量
 [vars]
-STRIPE_SECRET_KEY = ""  # 生产环境用 secrets 管理
 GOOGLE_CLIENT_ID = "1070692973169-kh4nort1uo59s8oq2159dqn6pc0cfp6e.apps.googleusercontent.com"
+PAYPAL_CLIENT_ID = "AdAcg8IjJ6g_Cw3hDrQnE0xk4qAG4-pbi7wvKWsDEQkq2D93oz3PDndkOd4cAf1_jTKXPVL8K334AOpB"
+PAYPAL_SECRET = "EDlqkLwfLv004lYc41Inu88RGhBTvEz9QCItB8QB-sGy7ykbW0qiiCcSRH0Vg4uTOUWiLDLvcGonICRI"

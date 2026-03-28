@@ -64,7 +64,7 @@
                     <li>✅ Priority support</li>
                     <li>✅ Early access features</li>
                 </ul>
-                <button class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 rounded-lg font-semibold hover:opacity-90 transition">Upgrade to Pro</button>
+                <div id="paypal-button-monthly"></div>
             </div>
 
             <!-- Pro Lifetime -->
@@ -82,7 +82,7 @@
                     <li>✅ Lifetime Pro badge</li>
                     <li>✅ Future Pro updates included</li>
                 </ul>
-                <button class="w-full bg-yellow-500 text-white py-2.5 rounded-lg font-semibold hover:bg-yellow-600 transition">Get Lifetime</button>
+                <div id="paypal-button-lifetime"></div>
             </div>
         </section>
 
@@ -120,6 +120,53 @@
 
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=AdAcg8IjJ6g_Cw3hDrQnE0xk4qAG4-pbi7wvKWsDEQkq2D93oz3PDndkOd4cAf1_jTKXPVL8K334AOpB&currency=USD"></script>
+    <script src="auth.js"></script>
+    <script>
+        const API_BASE = 'https://font-generator-api.hebiwu007.workers.dev';
+
+        function renderPayPalButton(containerId, planType) {
+            paypal.Buttons({
+                createOrder: async () => {
+                    const session = fg_loadSession();
+                    if (!session) {
+                        alert('Please sign in first');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    const res = await fetch(`${API_BASE}/api/payment/create-order`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ planType, userId: session.user.sub })
+                    });
+                    const data = await res.json();
+                    return data.orderId;
+                },
+                onApprove: async (data) => {
+                    const session = fg_loadSession();
+                    const res = await fetch(`${API_BASE}/api/payment/capture-order`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            orderId: data.orderID, 
+                            planType, 
+                            googleId: session.user.sub 
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        alert('Payment successful! You are now Pro.');
+                        window.location.href = 'index.html';
+                    }
+                }
+            }).render(`#${containerId}`);
+        }
+
+        renderPayPalButton('paypal-button-monthly', 'monthly');
+        renderPayPalButton('paypal-button-lifetime', 'lifetime');
     </script>
 </body>
 </html>

@@ -1,7 +1,9 @@
 /**
  * Cloudflare Worker - Font Generator Free API
- * 处理用户认证、会员状态、历史记录
+ * 处理用户认证、会员状态、历史记录、支付
  */
+
+import { handleCreateOrder, handleCaptureOrder } from './payment.js';
 
 export default {
   async fetch(request, env) {
@@ -36,6 +38,12 @@ export default {
       }
       if (url.pathname === '/api/history/list') {
         return handleHistoryList(request, env, corsHeaders);
+      }
+      if (url.pathname === '/api/payment/create-order') {
+        return handleCreateOrder(request, env, corsHeaders);
+      }
+      if (url.pathname === '/api/payment/capture-order') {
+        return handleCaptureOrder(request, env, corsHeaders);
       }
       
       return new Response(JSON.stringify({ error: 'Not found' }), { 
