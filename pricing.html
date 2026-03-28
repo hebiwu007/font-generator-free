@@ -129,86 +129,106 @@
 
         function initPayPalButtons() {
             if (typeof paypal === 'undefined' || !paypal.Buttons) {
-                document.getElementById('paypal-button-monthly').innerHTML = '<p style="color:red;">Loading PayPal...</p>';
-                document.getElementById('paypal-button-lifetime').innerHTML = '<p style="color:red;">Loading PayPal...</p>';
-                setTimeout(initPayPalButtons, 500);
+                document.getElementById('paypal-button-monthly').innerHTML = '<a href="https://www.sandbox.paypal.com/checkflow" target="_blank" class="block w-full text-center bg-blue-600 text-white py-3 rounded-lg font-semibold hover:opacity-90">Pay via PayPal (Direct)</a>';
+                document.getElementById('paypal-button-lifetime').innerHTML = '<a href="https://www.sandbox.paypal.com/checkflow" target="_blank" class="block w-full text-center bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:opacity-90">Pay via PayPal (Direct)</a>';
+                setTimeout(initPayPalButtons, 1000);
                 return;
             }
 
-            // Pro Monthly
-            paypal.Buttons({
-                style: {
-                    layout: 'vertical',
-                    color: 'blue',
-                    shape: 'rect'
-                },
-                createOrder: function(data, actions) {
-                    var session = fg_loadSession();
-                    if (!session) {
-                        alert('Please sign in first');
+            try {
+                // Pro Monthly
+                var monthlyButtons = paypal.Buttons({
+                    style: {
+                        layout: 'vertical',
+                        color: 'blue',
+                        shape: 'rect'
+                    },
+                    createOrder: function(data, actions) {
+                        var session = fg_loadSession();
+                        if (!session) {
+                            alert('Please sign in first');
+                            window.location.href = 'index.html';
+                            return;
+                        }
+                        return fetch(API_BASE + '/api/payment/create-order', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                planType: 'monthly', 
+                                userId: session.user.sub 
+                            })
+                        }).then(function(res) { 
+                            return res.json(); 
+                        }).then(function(data) { 
+                            return data.orderId; 
+                        });
+                    },
+                    onApprove: function(data, actions) {
+                        alert('Payment successful! You are now Pro.');
                         window.location.href = 'index.html';
-                        return;
+                    },
+                    onError: function(err) {
+                        console.error('PayPal error (Monthly):', err);
+                        // Fallback to direct link
+                        document.getElementById('paypal-button-monthly').innerHTML = '<a href="https://www.sandbox.paypal.com/checkflow" target="_blank" class="block w-full text-center bg-blue-600 text-white py-3 rounded-lg font-semibold hover:opacity-90">Pay via PayPal (Direct)</a>';
                     }
-                    // 返回 Promise，调用后端 API
-                    return fetch(API_BASE + '/api/payment/create-order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            planType: 'monthly', 
-                            userId: session.user.sub 
-                        })
-                    }).then(function(res) { 
-                        return res.json(); 
-                    }).then(function(data) { 
-                        return data.orderId; 
-                    });
-                },
-                onApprove: function(data, actions) {
-                    alert('Payment successful! You are now Pro.');
-                    window.location.href = 'index.html';
-                },
-                onError: function(err) {
-                    console.error('PayPal error:', err);
-                    alert('Payment failed. Please try again.');
+                });
+                if (monthlyButtons.isEligible()) {
+                    monthlyButtons.render('#paypal-button-monthly');
+                } else {
+                    document.getElementById('paypal-button-monthly').innerHTML = '<a href="https://www.sandbox.paypal.com/checkflow" target="_blank" class="block w-full text-center bg-blue-600 text-white py-3 rounded-lg font-semibold hover:opacity-90">Pay via PayPal</a>';
                 }
-            }).render('#paypal-button-monthly');
+            } catch(e) {
+                console.error('Monthly buttons error:', e);
+                document.getElementById('paypal-button-monthly').innerHTML = '<a href="https://www.sandbox.paypal.com/checkflow" target="_blank" class="block w-full text-center bg-blue-600 text-white py-3 rounded-lg font-semibold hover:opacity-90">Pay via PayPal</a>';
+            }
 
-            // Pro Lifetime
-            paypal.Buttons({
-                style: {
-                    layout: 'vertical',
-                    color: 'gold',
-                    shape: 'rect'
-                },
-                createOrder: function(data, actions) {
-                    var session = fg_loadSession();
-                    if (!session) {
-                        alert('Please sign in first');
+            try {
+                // Pro Lifetime
+                var lifetimeButtons = paypal.Buttons({
+                    style: {
+                        layout: 'vertical',
+                        color: 'gold',
+                        shape: 'rect'
+                    },
+                    createOrder: function(data, actions) {
+                        var session = fg_loadSession();
+                        if (!session) {
+                            alert('Please sign in first');
+                            window.location.href = 'index.html';
+                            return;
+                        }
+                        return fetch(API_BASE + '/api/payment/create-order', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                planType: 'lifetime', 
+                                userId: session.user.sub 
+                            })
+                        }).then(function(res) { 
+                            return res.json(); 
+                        }).then(function(data) { 
+                            return data.orderId; 
+                        });
+                    },
+                    onApprove: function(data, actions) {
+                        alert('Payment successful! You are now Pro.');
                         window.location.href = 'index.html';
-                        return;
+                    },
+                    onError: function(err) {
+                        console.error('PayPal error (Lifetime):', err);
+                        document.getElementById('paypal-button-lifetime').innerHTML = '<a href="https://www.sandbox.paypal.com/checkflow" target="_blank" class="block w-full text-center bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:opacity-90">Pay via PayPal (Direct)</a>';
                     }
-                    return fetch(API_BASE + '/api/payment/create-order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            planType: 'lifetime', 
-                            userId: session.user.sub 
-                        })
-                    }).then(function(res) { 
-                        return res.json(); 
-                    }).then(function(data) { 
-                        return data.orderId; 
-                    });
-                },
-                onApprove: function(data, actions) {
-                    alert('Payment successful! You are now Pro.');
-                    window.location.href = 'index.html';
-                },
-                onError: function(err) {
-                    console.error('PayPal error:', err);
-                    alert('Payment failed. Please try again.');
+                });
+                if (lifetimeButtons.isEligible()) {
+                    lifetimeButtons.render('#paypal-button-lifetime');
+                } else {
+                    document.getElementById('paypal-button-lifetime').innerHTML = '<a href="https://www.sandbox.paypal.com/checkflow" target="_blank" class="block w-full text-center bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:opacity-90">Pay via PayPal</a>';
                 }
-            }).render('#paypal-button-lifetime');
+            } catch(e) {
+                console.error('Lifetime buttons error:', e);
+                document.getElementById('paypal-button-lifetime').innerHTML = '<a href="https://www.sandbox.paypal.com/checkflow" target="_blank" class="block w-full text-center bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:opacity-90">Pay via PayPal</a>';
+            }
         }
 
         if (document.readyState === 'complete') {
