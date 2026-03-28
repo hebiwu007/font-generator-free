@@ -125,60 +125,93 @@
     <script src="auth.js"></script>
     
     <script>
-        const API_BASE = 'https://font-generator-api.hebiwu007.workers.dev';
+        var API_BASE = 'https://font-generator-api.hebiwu007.workers.dev';
+
+        function createOrder(planType) {
+            var session = fg_loadSession();
+            if (!session) {
+                alert('Please sign in first');
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            return fetch(API_BASE + '/api/payment/create-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    planType: planType,
+                    userId: session.user.sub
+                })
+            }).then(function(res) {
+                return res.json();
+            }).then(function(data) {
+                if (data.orderId) {
+                    return data.orderId;
+                } else {
+                    throw new Error(data.error || 'Failed to create order');
+                }
+            });
+        }
+
+        function onApprove(data, planType) {
+            alert('Payment successful! You are now Pro.');
+            window.location.href = 'index.html';
+        }
+
+        function onError(err, planType) {
+            console.error('PayPal error for ' + planType + ':', err);
+            alert('Payment failed: ' + (err.message || 'Unknown error'));
+        }
 
         window.onload = function() {
-            if (typeof paypal !== 'undefined' && paypal.Buttons) {
-                // Pro Monthly
-                paypal.Buttons({
-                    createOrder: (data, actions) => {
-                        const session = fg_loadSession();
-                        if (!session) {
-                            alert('Please sign in first');
-                            window.location.href = 'index.html';
-                            return;
-                        }
-                        return fetch(`${API_BASE}/api/payment/create-order`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ planType: 'monthly', userId: session.user.sub })
-                        }).then(res => res.json()).then(data => data.orderId);
-                    },
-                    onApprove: (data, actions) => {
-                        alert('Payment successful! You are now Pro.');
-                        window.location.href = 'index.html';
-                    },
-                    onError: (err) => {
-                        console.error('PayPal error:', err);
-                        alert('Payment failed. Please try again.');
+            // 等待一小段时间确保 PayPal SDK 完全加载
+            setTimeout(function() {
+                if (typeof paypal !== 'undefined' && paypal.Buttons) {
+                    try {
+                        paypal.Buttons({
+                            style: {
+                                layout: 'vertical',
+                                color: 'blue',
+                                shape: 'rect'
+                            },
+                            createOrder: function() {
+                                return createOrder('monthly');
+                            },
+                            onApprove: function(data) {
+                                onApprove(data, 'monthly');
+                            },
+                            onError: function(err) {
+                                onError(err, 'monthly');
+                            }
+                        }).render('#paypal-button-monthly');
+                    } catch(e) {
+                        console.error('Monthly button error:', e);
                     }
-                }).render('#paypal-button-monthly');
 
-                // Pro Lifetime
-                paypal.Buttons({
-                    createOrder: (data, actions) => {
-                        const session = fg_loadSession();
-                        if (!session) {
-                            alert('Please sign in first');
-                            window.location.href = 'index.html';
-                            return;
-                        }
-                        return fetch(`${API_BASE}/api/payment/create-order`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ planType: 'lifetime', userId: session.user.sub })
-                        }).then(res => res.json()).then(data => data.orderId);
-                    },
-                    onApprove: (data, actions) => {
-                        alert('Payment successful! You are now Pro.');
-                        window.location.href = 'index.html';
-                    },
-                    onError: (err) => {
-                        console.error('PayPal error:', err);
-                        alert('Payment failed. Please try again.');
+                    try {
+                        paypal.Buttons({
+                            style: {
+                                layout: 'vertical',
+                                color: 'gold',
+                                shape: 'rect'
+                            },
+                            createOrder: function() {
+                                return createOrder('lifetime');
+                            },
+                            onApprove: function(data) {
+                                onApprove(data, 'lifetime');
+                            },
+                            onError: function(err) {
+                                onError(err, 'lifetime');
+                            }
+                        }).render('#paypal-button-lifetime');
+                    } catch(e) {
+                        console.error('Lifetime button error:', e);
                     }
-                }).render('#paypal-button-lifetime');
-            }
+                }
+            }, 500);
         };
     </script>
 </body>
