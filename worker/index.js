@@ -3,7 +3,7 @@
  * 处理用户认证、会员状态、历史记录、支付
  */
 
-import { handleCreateOrder, handleCaptureOrder } from './payment.js';
+import { handleCreateOrder, handleCaptureOrder, handleWebhook } from './payment.js';
 
 export default {
   async fetch(request, env) {
@@ -44,6 +44,9 @@ export default {
       }
       if (url.pathname === '/api/payment/capture-order') {
         return handleCaptureOrder(request, env, corsHeaders);
+      }
+      if (url.pathname === '/api/payment/webhook') {
+        return handleWebhook(request, env, corsHeaders);
       }
       
       return new Response(JSON.stringify({ error: 'Not found' }), { 

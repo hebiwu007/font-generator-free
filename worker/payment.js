@@ -47,7 +47,8 @@ export async function handleCreateOrder(request, env, corsHeaders) {
           currency_code: 'USD',
           value: plan.amount
         },
-        description: plan.description
+        description: plan.description,
+        custom_id: userId // 传递 Google ID 用于 webhook 对账
       }]
     };
 
@@ -65,6 +66,57 @@ export async function handleCreateOrder(request, env, corsHeaders) {
       headers: corsHeaders 
     });
   } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+// 处理 PayPal Webhook 通知
+export async function handleWebhook(request, env, corsHeaders) {
+  try {
+    const event = await request.json();
+    console.log('[Webhook] Received event:', event.event_type);
+
+    // 处理支付完成事件
+    if (event.event_type === 'PAYMENT.CAPTURE.COMPLETED' || 
+        event.event_type === 'CHECKOUT.ORDER.COMPLETED') {
+      
+      const resource = event.resource;
+      const orderId = resource.id;
+      
+      // 从 custom_id 获取用户 Google ID
+      const googleId = resource.purchase_units?.[0]?.custom_id;
+      if (!googleId) {
+        console.error('[Webhook] No custom_id found');
+        return new Response('Missing custom_id', { status: 400 });
+      }
+
+      // 从 description 判断 planType
+      const description = resource.purchase_units?.[0]?.description || '';
+      const planType = description.includes('Monthly') ? 'monthly' : 'lifetime';
+
+      // 更新用户会员状态
+      const now = Math.floor(Date.now() / 1000);
+      const expiresAt = planType === 'monthly' ? now + 30 * 24 * 3600 : null;
+      
+      await env.DB.prepare(
+        'UPDATE users SET subscription_tier = ?, subscription_expires_at = ?, updated_at = ? WHERE google_id = ?'
+      ).bind(planType === 'lifetime' ? 'lifetime' : 'pro', expiresAt, now, googleId).run();
+      
+      // 记录支付
+      const amount = planType === 'monthly' ? 299 : 999;
+      await env.DB.prepare(
+        'INSERT INTO payments (user_id, stripe_payment_id, amount, currency, plan_type, status, created_at) SELECT id, ?, ?, ?, ?, ?, ? FROM users WHERE google_id = ?'
+      ).bind(orderId, amount, 'usd', planType, 'completed', now, googleId).run();
+      
+      console.log('[Webhook] User updated:', googleId, 'plan:', planType);
+    }
+
+    return new Response('OK', { status: 200 });
+  } catch (error) {
+    console.error('[Webhook] Error:', error.message);
     return new Response(JSON.stringify({ error: error.message }), { 
       status: 500, 
       headers: corsHeaders 
