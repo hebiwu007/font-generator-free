@@ -118,11 +118,18 @@
         <p>© <span id="year"></span> Font Generator Free. All rights reserved.</p>
     </footer>
 
-    <!-- Auth 模块 -->
-    <script src="auth.js"></script>
-    
     <!-- PayPal SDK -->
-    <script src="https://www.paypal.com/sdk/js?client-id=AdAcg8IjJ6g_Cw3hDrQnE0xk4qAG4-pbi7wvKWsDEQkq2D93oz3PDndkOd4cAf1_jTKXPVL8K334AOpB&currency=USD&intent=capture&debug=true"></script></script>
+    <script>
+        console.log('[PayPal] Starting to load SDK...');
+    </script>
+    <script src="https://www.paypal.com/sdk/js?client-id=AdAcg8IjJ6g_Cw3hDrQnE0xk4qAG4-pbi7wvKWsDEQkq2D93oz3PDndkOd4cAf1_jTKXPVL8K334AOpB&currency=USD&intent=capture"></script>
+    <script>
+        console.log('[PayPal] SDK script loaded, checking paypal object...');
+        console.log('[PayPal] paypal:', typeof paypal);
+    </script>
+    
+    <!-- Auth 模块 -->
+    <script src="auth.js"></script></script>
     
     <script>
         const API_BASE = 'https://font-generator-api.hebiwu007.workers.dev';
