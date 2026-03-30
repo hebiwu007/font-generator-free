@@ -72,7 +72,7 @@ export async function handleHistorySave(request, env, corsHeaders) {
   const now = Math.floor(Date.now() / 1000);
 
   await env.DB.prepare(
-    'INSERT INTO history (user_id, input_text, font_style, output_text, batch_id, is_combo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO history (user_id, input_text, font_style, output_text, batch_id, is_combo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
   ).bind(user.id, inputText, fontStyle, outputText, batchId || null, isCombo ? 1 : 0, now).run();
 
   return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
