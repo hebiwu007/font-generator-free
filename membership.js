@@ -52,6 +52,18 @@ function updateMembershipUI() {
     }
   }
   
+  // Pro 工具（History/Combos 链接）
+  const proTools = document.getElementById('pro-tools');
+  if (proTools) {
+    if (membershipStatus.isPro) {
+      proTools.classList.remove('hidden');
+      proTools.classList.add('flex');
+    } else {
+      proTools.classList.add('hidden');
+      proTools.classList.remove('flex');
+    }
+  }
+  
   // 广告显示（Free版显示）
   updateAdBanner();
 }

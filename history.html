@@ -97,12 +97,10 @@
                 if (window.googleUser) {
                     syncUserToBackend(window.googleUser, window.idToken).then(() => resolve());
                 } else {
-                    // 检查本地存储
-                    var savedUser = localStorage.getItem('fg_user');
-                    var savedToken = localStorage.getItem('fg_idToken');
-                    if (savedUser && savedToken) {
-                        var user = JSON.parse(savedUser);
-                        syncUserToBackend(user, savedToken).then(() => resolve());
+                    // 检查 sessionStorage
+                    var session = fg_loadSession();
+                    if (session) {
+                        syncUserToBackend(session.user, session.idToken).then(() => resolve());
                     } else {
                         // 未登录
                         document.getElementById('pro-prompt').classList.remove('hidden');

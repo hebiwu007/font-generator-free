@@ -157,12 +157,6 @@
             document.getElementById('year').textContent = new Date().getFullYear();
             initFontGrid();
             initFontSelector();
-            
-            // 认证成功后显示 Pro 工具
-            if (window.membershipStatus && window.membershipStatus.isPro) {
-                document.getElementById('pro-tools').classList.remove('hidden');
-                document.getElementById('pro-tools').classList.add('flex');
-            }
         });
 
         // 初始化字体选择网格

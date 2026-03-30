@@ -117,10 +117,9 @@
                 if (window.googleUser) {
                     syncUserToBackend(window.googleUser, window.idToken).then(() => resolve());
                 } else {
-                    var savedUser = localStorage.getItem('fg_user');
-                    var savedToken = localStorage.getItem('fg_idToken');
-                    if (savedUser && savedToken) {
-                        syncUserToBackend(JSON.parse(savedUser), savedToken).then(() => resolve());
+                    var session = fg_loadSession();
+                    if (session) {
+                        syncUserToBackend(session.user, session.idToken).then(() => resolve());
                     } else {
                         document.getElementById('pro-prompt').classList.remove('hidden');
                         resolve();
