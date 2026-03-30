@@ -536,15 +536,17 @@
             
             // Convert
             batchResults = [];
+            alert('DEBUG: Starting batchConvert, fontsToUse=' + fontsToUse.length);
             console.log('DEBUG: fontsToUse =', fontsToUse);
             console.log('DEBUG: allTexts =', allTexts);
+            console.log('DEBUG: convertText function exists:', typeof convertText === 'function');
             allTexts.forEach(function(text) {
                 var lines = text.content.split('\n');
                 lines.forEach(function(line) {
                     if (!line.trim()) return;
                     fontsToUse.forEach(function(fontName) {
                         var output = convertText(line, fontName);
-                        console.log('DEBUG: convertText("' + line + '", "' + fontName + '") = "' + output + '"');
+                        console.log('DEBUG: convert("' + line + '", "' + fontName + '") = "' + output + '"');
                         batchResults.push({
                             source: text.source,
                             font: fontName,
@@ -555,6 +557,7 @@
                 });
             });
             console.log('DEBUG: batchResults =', batchResults);
+            alert('DEBUG: Done, batchResults.length=' + batchResults.length);
             
             if (batchResults.length === 0) {
                 showToast('No results');
