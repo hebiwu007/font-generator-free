@@ -8,6 +8,7 @@
     <link rel="canonical" href="https://fontgeneratorfree.online/" />
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <script src="auth.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -589,89 +590,136 @@
             var format = document.querySelector('input[name="output-format"]:checked').value;
             
             if (format === 'merged') {
-                // Merged: All results in one file
-                var content = 'FONT GENERATOR - ALL RESULTS\n';
-                content += 'Generated: ' + new Date().toLocaleString() + '\n';
-                content += 'Total: ' + batchResults.length + ' results\n';
-                content += '=' .repeat(50) + '\n\n';
-                batchResults.forEach(function(r) {
-                    content += '[Font: ' + r.font + ' | Source: ' + r.source + ']\n' + r.output + '\n\n';
-                });
-                downloadFile('font_generator_all.txt', content);
-                
+                downloadMerged();
             } else if (format === 'byFont') {
-                // By Font: Each font = one file
-                var byFont = {};
-                batchResults.forEach(function(r) {
-                    if (!byFont[r.font]) byFont[r.font] = [];
-                    byFont[r.font].push({source: r.source, output: r.output});
-                });
-                
-                // Download first font as example, show info for others
-                var firstFont = Object.keys(byFont)[0];
-                var content = 'Font: ' + firstFont + '\n';
-                content += '=' .repeat(30) + '\n\n';
-                byFont[firstFont].forEach(function(r) {
-                    content += '[Source: ' + r.source + ']\n' + r.output + '\n\n';
-                });
-                content += '\n[Other fonts available: ' + Object.keys(byFont).slice(1).join(', ') + ']';
-                downloadFile('font_generator_' + firstFont.replace(/\s+/g, '_') + '.txt', content);
-                showToast('Downloaded: ' + firstFont + ' (' + byFont[firstFont].length + ' results)\nOther fonts: ' + Object.keys(byFont).length);
-                
+                downloadByFont();
             } else if (format === 'bySource') {
-                // By Source: Each source file = one section
-                var bySource = {};
-                batchResults.forEach(function(r) {
-                    if (!bySource[r.source]) bySource[r.source] = [];
-                    bySource[r.source].push({font: r.font, output: r.output});
-                });
-                
-                var content = 'FONT GENERATOR - BY SOURCE\n';
-                content += '=' .repeat(50) + '\n\n';
-                Object.keys(bySource).forEach(function(src) {
-                    content += '📄 ' + src + '\n';
-                    content += '-'.repeat(30) + '\n';
-                    bySource[src].forEach(function(r) {
-                        content += '[' + r.font + '] ' + r.output + '\n';
-                    });
-                    content += '\n';
-                });
-                downloadFile('font_generator_by_source.txt', content);
-                
-            } else {
-                // ZIP: Organize by source, then by font
-                var content = 'FONT GENERATOR - ZIP PACKAGE\n';
-                content += 'Generated: ' + new Date().toLocaleString() + '\n';
-                content += 'Total: ' + batchResults.length + ' results\n';
-                content += '=' .repeat(50) + '\n\n';
-                
-                var bySource = {};
-                batchResults.forEach(function(r) {
-                    if (!bySource[r.source]) bySource[r.source] = {};
-                    if (!bySource[r.source][r.font]) bySource[r.source][r.font] = [];
-                    bySource[r.source][r.font].push(r.output);
-                });
-                
-                Object.keys(bySource).forEach(function(src) {
-                    content += '\n📦 SOURCE: ' + src + '\n';
-                    content += '~'.repeat(40) + '\n\n';
-                    
-                    Object.keys(bySource[src]).forEach(function(font) {
-                        content += '  📝 Font: ' + font + '\n';
-                        bySource[src][font].forEach(function(out) {
-                            content += '     ' + out + '\n';
-                        });
-                        content += '\n';
-                    });
-                });
-                
-                downloadFile('font_generator_package.zip.txt', content);
-                showToast('Downloaded: ZIP package format');
+                downloadBySource();
+            } else if (format === 'zip') {
+                downloadZip();
             }
         }
         
+        // Merged: All results in one file
+        function downloadMerged() {
+            var content = 'FONT GENERATOR - ALL RESULTS\n';
+            content += 'Generated: ' + new Date().toLocaleString() + '\n';
+            content += 'Total: ' + batchResults.length + ' results\n';
+            content += '==================================================\n\n';
+            
+            batchResults.forEach(function(r, i) {
+                var lineNum = i + 1;
+                content += '[Font: ' + r.font + ' | Source: ' + r.source + ' | Line: ' + lineNum + ']\n';
+                content += r.output + '\n\n';
+            });
+            
+            downloadFile('font_generator_merged.txt', content);
+            showToast('Downloaded: Merged file with ' + batchResults.length + ' results');
+        }
+        
+        // By Font: Each font = one file, ZIP
+        function downloadByFont() {
+            var byFont = {};
+            batchResults.forEach(function(r) {
+                if (!byFont[r.font]) byFont[r.font] = [];
+                byFont[r.font].push(r);
+            });
+            
+            var zip = new JSZip();
+            
+            Object.keys(byFont).forEach(function(font) {
+                var content = 'Font: ' + font + '\n';
+                content += '==================================================\n\n';
+                
+                var bySource = {};
+                byFont[font].forEach(function(r) {
+                    if (!bySource[r.source]) bySource[r.source] = [];
+                    bySource[r.source].push(r.output);
+                });
+                
+                Object.keys(bySource).forEach(function(src) {
+                    content += '[' + src + ']\n';
+                    content += bySource[src].join('\n') + '\n\n';
+                });
+                
+                var filename = 'font_' + font.replace(/\s+/g, '_') + '.txt';
+                zip.file(filename, content);
+            });
+            
+            zip.generateAsync({type: 'blob'}).then(function(blob) {
+                downloadBlob('font_generator_by_font.zip', blob);
+                showToast('Downloaded: ' + Object.keys(byFont).length + ' font files');
+            });
+        }
+        
+        // By Source: Each source = one file, ZIP
+        function downloadBySource() {
+            var bySource = {};
+            batchResults.forEach(function(r) {
+                if (!bySource[r.source]) bySource[r.source] = {};
+                if (!bySource[r.source][r.font]) bySource[r.source][r.font] = [];
+                bySource[r.source][r.font].push(r.output);
+            });
+            
+            var zip = new JSZip();
+            
+            Object.keys(bySource).forEach(function(src) {
+                var content = 'FONT GENERATOR - BY SOURCE\n';
+                content += '==================================================\n\n';
+                content += 'Source: ' + src + '\n';
+                content += '--------------------------------------------------\n\n';
+                
+                Object.keys(bySource[src]).forEach(function(font) {
+                    content += '[' + font + ']\n';
+                    content += bySource[src][font].join('\n') + '\n\n';
+                });
+                
+                var filename = src.replace(/\.[^.]+$/, '') + '_results.txt';
+                zip.file(filename, content);
+            });
+            
+            zip.generateAsync({type: 'blob'}).then(function(blob) {
+                downloadBlob('font_generator_by_source.zip', blob);
+                showToast('Downloaded: ' + Object.keys(bySource).length + ' source files');
+            });
+        }
+        
+        // ZIP: Full package
+        function downloadZip() {
+            var structure = {};
+            batchResults.forEach(function(r) {
+                if (!structure[r.source]) structure[r.source] = {};
+                if (!structure[r.source][r.font]) structure[r.source][r.font] = [];
+                structure[r.source][r.font].push(r.output);
+            });
+            
+            var zip = new JSZip();
+            
+            Object.keys(structure).forEach(function(src) {
+                var folder = zip.folder(src);
+                
+                Object.keys(structure[src]).forEach(function(font) {
+                    var content = 'Font: ' + font + '\n';
+                    content += 'Source: ' + src + '\n';
+                    content += '========================================\n\n';
+                    content += structure[src][font].join('\n') + '\n';
+                    folder.file(font + '.txt', content);
+                });
+            });
+            
+            var timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+            zip.generateAsync({type: 'blob'}).then(function(blob) {
+                downloadBlob('font_generator_' + timestamp + '.zip', blob);
+                showToast('Downloaded: ZIP package');
+            });
+        }
+        
         function downloadFile(filename, content) {
-            var blob = new Blob([content], {type: 'text/plain'});
+            var blob = new Blob([content], {type: 'text/plain;charset=utf-8'});
+            downloadBlob(filename, blob);
+        }
+        
+        function downloadBlob(filename, blob) {
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
             a.href = url;
