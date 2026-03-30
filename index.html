@@ -539,6 +539,8 @@
             console.log('DEBUG 1: fontsToUse =', fontsToUse);
             console.log('DEBUG 2: allTexts =', JSON.stringify(allTexts));
             console.log('DEBUG 3: convertText type =', typeof convertText);
+            console.log('DEBUG 3b: fontDictionaries.length =', typeof fontDictionaries !== 'undefined' ? fontDictionaries.length : 'undefined');
+            console.log('DEBUG 3c: fontDictionaries[0].charMap =', typeof fontDictionaries !== 'undefined' && fontDictionaries[0] ? fontDictionaries[0].charMap : 'undefined');
             
             var lineNum = 0;
             allTexts.forEach(function(text) {
@@ -548,8 +550,18 @@
                     lineNum++;
                     if (!line.trim()) return;
                     fontsToUse.forEach(function(fontName) {
+                        // Debug: check font lookup
+                        var font = typeof fontDictionaries !== 'undefined' ? fontDictionaries.find(function(f) { return f.name === fontName; }) : null;
+                        console.log('DEBUG 5a: Looking up font "' + fontName + '" =>', font ? 'FOUND, charMap.size=' + font.charMap.size : 'NOT FOUND');
+                        
+                        // Debug: test charMap directly
+                        if (font && font.charMap) {
+                            var testChar = line.charAt(0);
+                            console.log('DEBUG 5b: charMap.get("' + testChar + '") =', font.charMap.get(testChar));
+                        }
+                        
                         var output = convertText(line, fontName);
-                        console.log('DEBUG 5: Line' + lineNum + ' convert("' + line + '", "' + fontName + '") => "' + output + '"');
+                        console.log('DEBUG 5c: Line' + lineNum + ' convert("' + line + '", "' + fontName + '") => "' + output + '"');
                         batchResults.push({
                             source: text.source,
                             font: fontName,
