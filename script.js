@@ -87,25 +87,22 @@ Object.keys(fontMaps).forEach(function(fontName) {
     const fontData = fontMaps[fontName];
     let mapStr = typeof fontData === 'string' ? fontData : fontData.chars;
     
-    // 将字符串转换为码点数组
-    const codePoints = [];
-    for (const char of mapStr) {
-        codePoints.push(char.codePointAt(0));
-    }
+    // 使用码点数组来创建映射（解决代理对问题）
+    const codePointArr = Array.from(mapStr);
     
-    // 创建码点到转换字符的映射
+    // 创建字符到转换字符的映射
     const charMap = {};
     for (let i = 0; i < baseChars.length; i++) {
-        if (codePoints[i] !== undefined) {
-            charMap[baseChars[i]] = String.fromCodePoint(codePoints[i]);
+        if (codePointArr[i]) {
+            charMap[baseChars[i]] = codePointArr[i];
         }
     }
     
     if (typeof fontData === 'object') {
-        fontData.codePoints = codePoints;
+        fontData.codePointArr = codePointArr;
         fontData.charMap = charMap;
     } else {
-        fontMaps[fontName] = { chars: mapStr, codePoints: codePoints, charMap: charMap };
+        fontMaps[fontName] = { chars: mapStr, codePointArr: codePointArr, charMap: charMap };
     }
 });
 
