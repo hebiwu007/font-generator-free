@@ -536,17 +536,20 @@
             
             // Convert
             batchResults = [];
-            alert('DEBUG: Starting batchConvert, fontsToUse=' + fontsToUse.length);
-            console.log('DEBUG: fontsToUse =', fontsToUse);
-            console.log('DEBUG: allTexts =', allTexts);
-            console.log('DEBUG: convertText function exists:', typeof convertText === 'function');
+            console.log('DEBUG 1: fontsToUse =', fontsToUse);
+            console.log('DEBUG 2: allTexts =', JSON.stringify(allTexts));
+            console.log('DEBUG 3: convertText type =', typeof convertText);
+            
+            var lineNum = 0;
             allTexts.forEach(function(text) {
                 var lines = text.content.split('\n');
+                console.log('DEBUG 4: Processing text.source =', text.source, ', lines =', lines);
                 lines.forEach(function(line) {
+                    lineNum++;
                     if (!line.trim()) return;
                     fontsToUse.forEach(function(fontName) {
                         var output = convertText(line, fontName);
-                        console.log('DEBUG: convert("' + line + '", "' + fontName + '") = "' + output + '"');
+                        console.log('DEBUG 5: Line' + lineNum + ' convert("' + line + '", "' + fontName + '") => "' + output + '"');
                         batchResults.push({
                             source: text.source,
                             font: fontName,
@@ -556,8 +559,9 @@
                     });
                 });
             });
-            console.log('DEBUG: batchResults =', batchResults);
-            alert('DEBUG: Done, batchResults.length=' + batchResults.length);
+            console.log('DEBUG 6: batchResults.length =', batchResults.length);
+            console.log('DEBUG 7: batchResults[0] =', batchResults[0]);
+            console.log('DEBUG 8: batchResults[0].output =', batchResults[0] ? batchResults[0].output : 'N/A');
             
             if (batchResults.length === 0) {
                 showToast('No results');
