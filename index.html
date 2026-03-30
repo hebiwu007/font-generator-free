@@ -105,6 +105,13 @@
                 <!-- Import List -->
                 <div id="import-list" class="space-y-2"></div>
                 
+                <!-- Clear All Button -->
+                <div class="mt-3 flex justify-end" id="clear-all-container" style="display:none;">
+                    <button onclick="clearAllInput()" class="text-sm text-red-500 hover:text-red-700 font-medium">
+                        🗑️ Clear All
+                    </button>
+                </div>
+                
                 <!-- Empty State -->
                 <div id="batch-empty" class="text-center py-6 text-gray-400">
                     <div class="text-4xl mb-2">📋</div>
@@ -301,12 +308,13 @@
         }
 
         function handleFiles(files) {
-            if (files.length > 10) {
-                showToast('Max 10 files allowed');
+            // Check total files limit
+            var totalFiles = batchFiles.length + files.length;
+            if (totalFiles > 10) {
+                showToast('Max 10 files allowed. Currently have ' + batchFiles.length);
                 return;
             }
             
-            batchFiles = [];
             var promises = [];
             
             for (var i = 0; i < files.length; i++) {
@@ -329,20 +337,30 @@
         function onBatchTextChange() {
             updateImportList();
         }
+        
+        function clearAllInput() {
+            batchFiles = [];
+            document.getElementById('batch-text').value = '';
+            updateImportList();
+            showToast('Cleared all input');
+        }
 
         function updateImportList() {
             var container = document.getElementById('import-list');
             var empty = document.getElementById('batch-empty');
+            var clearAllContainer = document.getElementById('clear-all-container');
             
             var hasContent = batchFiles.length > 0 || document.getElementById('batch-text').value.trim().length > 0;
             
             if (!hasContent) {
                 container.innerHTML = '';
                 empty.classList.remove('hidden');
+                clearAllContainer.style.display = 'none';
                 return;
             }
             
             empty.classList.add('hidden');
+            clearAllContainer.style.display = 'block';
             container.innerHTML = '<h4 class="font-medium text-sm text-gray-600 mb-2">Input sources:</h4>';
             
             batchFiles.forEach(function(file, i) {
@@ -538,23 +556,24 @@
                 return;
             }
             
-            // Show preview
+            // Clear previous preview and show new
             var preview = document.getElementById('preview-area');
             var download = document.getElementById('download-area');
             var content = document.getElementById('preview-content');
             
             document.getElementById('result-count').textContent = batchResults.length;
             
-            // Build preview text
+            // Build preview text - clear previous first
             var text = '';
-            batchResults.slice(0, 20).forEach(function(r) {
+            batchResults.slice(0, 30).forEach(function(r) {
                 text += '[' + r.font + '] ' + r.output + '\n\n';
             });
-            if (batchResults.length > 20) {
-                text += '... and ' + (batchResults.length - 20) + ' more';
+            if (batchResults.length > 30) {
+                text += '... and ' + (batchResults.length - 30) + ' more results';
             }
             content.textContent = text;
             
+            // Show preview and download buttons
             preview.classList.remove('hidden');
             download.classList.remove('hidden');
             
@@ -568,57 +587,90 @@
             }
             
             var format = document.querySelector('input[name="output-format"]:checked').value;
-            var filename, content;
             
             if (format === 'merged') {
-                content = batchResults.map(function(r) {
-                    return '[' + r.font + '] ' + r.output;
-                }).join('\n\n');
-                filename = 'font_generator_merged.txt';
+                // Merged: All results in one file
+                var content = 'FONT GENERATOR - ALL RESULTS\n';
+                content += 'Generated: ' + new Date().toLocaleString() + '\n';
+                content += 'Total: ' + batchResults.length + ' results\n';
+                content += '=' .repeat(50) + '\n\n';
+                batchResults.forEach(function(r) {
+                    content += '[Font: ' + r.font + ' | Source: ' + r.source + ']\n' + r.output + '\n\n';
+                });
+                downloadFile('font_generator_all.txt', content);
+                
             } else if (format === 'byFont') {
+                // By Font: Each font = one file
                 var byFont = {};
                 batchResults.forEach(function(r) {
                     if (!byFont[r.font]) byFont[r.font] = [];
-                    byFont[r.font].push('[' + r.source + '] ' + r.output);
+                    byFont[r.font].push({source: r.source, output: r.output});
                 });
-                content = Object.keys(byFont).map(function(font) {
-                    return '═══ ' + font + ' ═══\n' + byFont[font].join('\n');
-                }).join('\n\n');
-                filename = 'font_generator_by_font.txt';
+                
+                // Download first font as example, show info for others
+                var firstFont = Object.keys(byFont)[0];
+                var content = 'Font: ' + firstFont + '\n';
+                content += '=' .repeat(30) + '\n\n';
+                byFont[firstFont].forEach(function(r) {
+                    content += '[Source: ' + r.source + ']\n' + r.output + '\n\n';
+                });
+                content += '\n[Other fonts available: ' + Object.keys(byFont).slice(1).join(', ') + ']';
+                downloadFile('font_generator_' + firstFont.replace(/\s+/g, '_') + '.txt', content);
+                showToast('Downloaded: ' + firstFont + ' (' + byFont[firstFont].length + ' results)\nOther fonts: ' + Object.keys(byFont).length);
+                
             } else if (format === 'bySource') {
+                // By Source: Each source file = one section
                 var bySource = {};
                 batchResults.forEach(function(r) {
                     if (!bySource[r.source]) bySource[r.source] = [];
-                    bySource[r.source].push('[' + r.font + '] ' + r.output);
+                    bySource[r.source].push({font: r.font, output: r.output});
                 });
-                content = Object.keys(bySource).map(function(src) {
-                    return '═══ ' + src + ' ═══\n' + bySource[src].join('\n');
-                }).join('\n\n');
-                filename = 'font_generator_by_source.txt';
+                
+                var content = 'FONT GENERATOR - BY SOURCE\n';
+                content += '=' .repeat(50) + '\n\n';
+                Object.keys(bySource).forEach(function(src) {
+                    content += '📄 ' + src + '\n';
+                    content += '-'.repeat(30) + '\n';
+                    bySource[src].forEach(function(r) {
+                        content += '[' + r.font + '] ' + r.output + '\n';
+                    });
+                    content += '\n';
+                });
+                downloadFile('font_generator_by_source.txt', content);
+                
             } else {
-                // ZIP format (as text)
-                content = 'FONT GENERATOR - BATCH RESULTS\n';
+                // ZIP: Organize by source, then by font
+                var content = 'FONT GENERATOR - ZIP PACKAGE\n';
                 content += 'Generated: ' + new Date().toLocaleString() + '\n';
-                content += 'Results: ' + batchResults.length + '\n\n';
-                var bySrc = {};
+                content += 'Total: ' + batchResults.length + ' results\n';
+                content += '=' .repeat(50) + '\n\n';
+                
+                var bySource = {};
                 batchResults.forEach(function(r) {
-                    if (!bySrc[r.source]) bySrc[r.source] = {};
-                    if (!bySrc[r.source][r.font]) bySrc[r.source][r.font] = [];
-                    bySrc[r.source][r.font].push(r.output);
+                    if (!bySource[r.source]) bySource[r.source] = {};
+                    if (!bySource[r.source][r.font]) bySource[r.source][r.font] = [];
+                    bySource[r.source][r.font].push(r.output);
                 });
-                Object.keys(bySrc).forEach(function(src) {
-                    content += '\n📄 ' + src + '\n';
-                    Object.keys(bySrc[src]).forEach(function(font) {
-                        content += '\n  ── ' + font + ' ──\n';
-                        bySrc[src][font].forEach(function(o) {
-                            content += '  ' + o + '\n';
+                
+                Object.keys(bySource).forEach(function(src) {
+                    content += '\n📦 SOURCE: ' + src + '\n';
+                    content += '~'.repeat(40) + '\n\n';
+                    
+                    Object.keys(bySource[src]).forEach(function(font) {
+                        content += '  📝 Font: ' + font + '\n';
+                        bySource[src][font].forEach(function(out) {
+                            content += '     ' + out + '\n';
                         });
+                        content += '\n';
                     });
                 });
-                filename = 'font_generator_batch_results.txt';
+                
+                downloadFile('font_generator_package.zip.txt', content);
+                showToast('Downloaded: ZIP package format');
             }
-            
-            // Download
+        }
+        
+        function downloadFile(filename, content) {
             var blob = new Blob([content], {type: 'text/plain'});
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
@@ -628,8 +680,6 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
-            showToast('Downloaded: ' + filename);
         }
 
         // ========== UTILS ==========
