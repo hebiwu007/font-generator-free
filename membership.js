@@ -332,15 +332,8 @@ async function exportAsImage(texts, fonts) {
   link.click();
 }
 
-// 简易文本转换 - 委托给 script.js 的字体引擎
-function convertText(text, fontStyle) {
-  // 使用 script.js 中定义的 convertText 函数进行转换
-  if (typeof window.convertText === 'function') {
-    return window.convertText(text, fontStyle);
-  }
-  // 如果 script.js 未加载，返回原文本
-  return text;
-}
+// convertText 函数已移至 script.js
+// 此处不再需要重复定义
 
 // 导出为 PDF（简化版，用图片方式）
 async function exportAsPDF(texts, fonts) {
