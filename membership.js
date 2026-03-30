@@ -332,11 +332,14 @@ async function exportAsImage(texts, fonts) {
   link.click();
 }
 
-// 简易文本转换（需要配合 script.js 的字体引擎）
+// 简易文本转换 - 委托给 script.js 的字体引擎
 function convertText(text, fontStyle) {
-  // 这个需要和 script.js 中的字体映射表配合
-  // 暂时返回原文本，后续需要导入字体引擎
-  return text; // TODO: 集成字体转换
+  // 使用 script.js 中定义的 convertText 函数进行转换
+  if (typeof window.convertText === 'function') {
+    return window.convertText(text, fontStyle);
+  }
+  // 如果 script.js 未加载，返回原文本
+  return text;
 }
 
 // 导出为 PDF（简化版，用图片方式）
