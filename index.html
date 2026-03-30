@@ -272,12 +272,30 @@
             results.forEach(function(r, i) {
                 var card = document.createElement('div');
                 card.className = 'bg-white p-3 rounded-lg border border-gray-100 text-sm';
-                card.innerHTML = '
-                    <div class="text-xs text-gray-400 mb-1">' + r.font + '</div>
-                    <div class="text-gray-600 mb-2 line-clamp-2">' + r.input + '</div>
-                    <div class="text-gray-800 font-medium mb-2">' + r.output + '</div>
-                    <button onclick="copyToClipboard(\'' + i + '\')" class="text-blue-600 text-xs font-medium">Copy</button>
-                ';
+                
+                var fontLabel = document.createElement('div');
+                fontLabel.className = 'text-xs text-gray-400 mb-1';
+                fontLabel.textContent = r.font;
+                card.appendChild(fontLabel);
+                
+                var inputText = document.createElement('div');
+                inputText.className = 'text-gray-600 mb-2 line-clamp-2';
+                inputText.textContent = r.input;
+                card.appendChild(inputText);
+                
+                var outputText = document.createElement('div');
+                outputText.className = 'text-gray-800 font-medium mb-2';
+                outputText.textContent = r.output;
+                card.appendChild(outputText);
+                
+                var copyBtn = document.createElement('button');
+                copyBtn.className = 'text-blue-600 text-xs font-medium';
+                copyBtn.textContent = 'Copy';
+                copyBtn.onclick = (function(idx) {
+                    return function() { copyToClipboard(String(idx)); };
+                })(i);
+                card.appendChild(copyBtn);
+                
                 container.appendChild(card);
             });
         }
