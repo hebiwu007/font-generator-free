@@ -70,7 +70,7 @@
                 ✨ Single
             </button>
             <button id="mode-batch" onclick="setMode('batch')" class="px-4 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200">
-                📦 Batch <span class="text-xs bg-yellow-500 text-white px-1.5 py-0.5 rounded-full">PRO</span>
+                📦 Batch
             </button>
         </div>
 
@@ -214,12 +214,7 @@
                 toolbar.classList.add('hidden');
                 input.placeholder = 'Type your text here to see the magic...';
             } else {
-                // 需要 Pro 权限
-                if (!requirePro()) {
-                    batchBtn.classList.remove('bg-blue-600', 'text-white');
-                    batchBtn.classList.add('bg-gray-100', 'text-gray-700');
-                    return;
-                }
+                // 批量模式（暂时不做Pro限制）
                 batchBtn.classList.remove('bg-gray-100', 'text-gray-700');
                 batchBtn.classList.add('bg-blue-600', 'text-white');
                 singleBtn.classList.remove('bg-blue-600', 'text-white');
@@ -287,13 +282,8 @@
             });
         }
 
-        // 保存批量
+        // 保存批量（暂时不做Pro限制）
         async function batchSave() {
-            if (!membershipStatus.isPro) {
-                showUpgradeModal();
-                return;
-            }
-            
             var input = document.getElementById('textInput').value;
             var lines = input.split('\n').filter(function(l) { return l.trim(); });
             
@@ -309,9 +299,18 @@
                 });
             });
             
-            var batchId = await saveBatchHistory(records, 'Batch ' + new Date().toLocaleDateString());
-            if (batchId) {
-                alert('Saved! Batch ID: ' + batchId);
+            // 如果已登录且是Pro用户，保存到云端
+            if (membershipStatus.isPro && membershipStatus.idToken) {
+                var batchId = await saveBatchHistory(records, 'Batch ' + new Date().toLocaleDateString());
+                if (batchId) {
+                    alert('Saved to cloud! Batch ID: ' + batchId);
+                }
+            } else {
+                // 否则本地保存
+                var saved = JSON.parse(localStorage.getItem('fg_batch_history') || '[]');
+                saved.unshift({ records: records, date: new Date().toLocaleString() });
+                localStorage.setItem('fg_batch_history', JSON.stringify(saved.slice(0, 20)));
+                alert('Saved locally! ' + records.length + ' records');
             }
         }
 
@@ -321,21 +320,30 @@
             window.print();
         }
 
-        // 保存为组合
+        // 保存为组合（暂时不做Pro限制）
         function showComboCreator() {
             if (selectedFonts.length === 0) {
-                alert('Please select at least one font');
+                alert('Please select at least one font first!');
                 return;
             }
             
             var name = prompt('Enter a name for this combo:');
             if (!name) return;
             
-            saveFontCombo(name, selectedFonts).then(function(id) {
-                if (id) {
-                    alert('Combo saved! ID: ' + id);
-                }
-            });
+            // 如果已登录且是Pro用户，保存到云端
+            if (membershipStatus.isPro && membershipStatus.idToken) {
+                saveFontCombo(name, selectedFonts).then(function(id) {
+                    if (id) {
+                        alert('Combo saved to cloud! ID: ' + id);
+                    }
+                });
+            } else {
+                // 否则本地保存
+                var saved = JSON.parse(localStorage.getItem('fg_font_combos') || '[]');
+                saved.push({ name: name, fonts: selectedFonts, date: new Date().toLocaleString() });
+                localStorage.setItem('fg_font_combos', JSON.stringify(saved));
+                alert('Combo saved locally! ' + selectedFonts.length + ' fonts');
+            }
         }
 
         // 复制（支持批量）
