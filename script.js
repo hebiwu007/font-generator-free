@@ -108,9 +108,16 @@ function convertText(text, fontName) {
     if (!font) return text;
     
     const inputChars = Array.from(text);
-    return inputChars.map(char => {
+    const result = inputChars.map(char => {
         return font.charMap.get(char) || char;
     }).join('');
+    
+    // Debug log in browser console
+    if (typeof console !== 'undefined' && text.trim().length > 0 && text.trim().length < 50) {
+        console.log('convertText("' + text.trim().substring(0, 10) + '", "' + fontName + '") => "' + result.trim().substring(0, 20) + '"');
+    }
+    
+    return result;
 }
 
 // 复制到剪贴板
