@@ -46,8 +46,20 @@ const fontNames = fontDictionaries.map(f => f.name);
 // 预处理映射表
 fontDictionaries.forEach(font => {
     font.charMap = new Map();
+    const mapArr = font.map;
+    
+    // 检查是否是组合字符字体（map 长度是 baseChars 的两倍）
+    // 这类字体的 map 格式为 [letter, combining_mark, letter, combining_mark, ...]
+    const isCombiningFont = mapArr.length === baseChars.length * 2;
+    
     baseChars.forEach((char, index) => {
-        font.charMap.set(char, font.map[index]);
+        if (isCombiningFont) {
+            // 组合字符字体：每两个元素一组，组合成完整字符
+            font.charMap.set(char, mapArr[index * 2] + mapArr[index * 2 + 1]);
+        } else {
+            // 普通字体：直接映射
+            font.charMap.set(char, mapArr[index]);
+        }
     });
 });
 
