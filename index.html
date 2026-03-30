@@ -3,132 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Font Generator - Copy and Paste Fancy Text for Instagram & TikTok</title>
+    <title>Font Generator Free - Copy and Paste Fancy Text for Instagram & TikTok</title>
     <meta name="description" content="Generate cool, fancy, and aesthetic fonts instantly. Copy and paste stylish text for your Instagram bio, TikTok, Twitter, and gaming nicknames. 100% Free.">
-    <meta name="keywords" content="font generator, fancy text, instagram fonts, copy and paste fonts, cool text generator">
     <link rel="canonical" href="https://fontgeneratorfree.online/" />
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 自定义样式 -->
     <link rel="stylesheet" href="style.css">
-
-    <!-- Auth 模块 -->
     <script src="auth.js"></script>
-
-    <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
     <!-- Header -->
     <header class="bg-white shadow-sm py-4 mb-6 px-4">
-        <div class="container mx-auto max-w-4xl flex items-center justify-between flex-wrap gap-3">
-            <!-- 标题 -->
-            <div class="text-center flex-1">
-                <h1 class="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-1">
-                    Font Generator Free
-                </h1>
-                <h2 class="text-gray-500 text-sm md:text-base">Instantly generate cool fancy text. Copy & Paste anywhere!</h2>
-            </div>
-
-            <!-- 右侧工具栏 -->
-            <div class="flex items-center gap-3 flex-shrink-0">
-                <!-- Pro 工具（已登录用户可见） -->
-                <div id="pro-tools" class="hidden items-center gap-2">
-                    <a href="history.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700 flex items-center gap-1" title="History">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        History
-                    </a>
-                    <a href="combo.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700 flex items-center gap-1" title="My Combos">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                        </svg>
-                        Combos
-                    </a>
-                </div>
-                
+        <div class="container mx-auto max-w-5xl flex items-center justify-between flex-wrap gap-3">
+            <a href="index.html" class="text-xl md:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                Font Generator Free
+            </a>
+            
+            <div class="flex items-center gap-3">
+                <a href="combo.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700 flex items-center gap-1">
+                    🎨 Combos
+                </a>
                 <a href="pricing.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Pricing</a>
                 <span id="pro-badge" style="display:none;"></span>
                 <div id="auth-login-btn"></div>
                 <div id="auth-user-info" style="display:none;" class="flex items-center gap-2">
-                    <img id="auth-user-avatar" src="" alt="User avatar" class="w-8 h-8 rounded-full object-cover border-2 border-blue-200">
+                    <img id="auth-user-avatar" src="" alt="" class="w-8 h-8 rounded-full border-2 border-blue-200">
                     <span id="auth-user-name" class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
-                    <button onclick="signOut()" class="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50">Sign out</button>
+                    <button onclick="signOut()" class="text-xs text-gray-400 hover:text-red-500">Sign out</button>
                 </div>
             </div>
         </div>
     </header>
 
     <!-- Main -->
-    <main class="flex-grow container mx-auto px-4 max-w-4xl">
-        <!-- 模式切换 -->
-        <div class="flex justify-center mb-4 gap-2">
-            <button id="mode-single" onclick="setMode('single')" class="px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white">
-                ✨ Single
-            </button>
-            <button id="mode-batch" onclick="setMode('batch')" class="px-4 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200">
-                📦 Batch
-            </button>
+    <main class="flex-grow container mx-auto px-4 max-w-5xl">
+        
+        <!-- Mode Tabs -->
+        <div class="flex justify-center mb-6">
+            <div class="inline-flex bg-white rounded-xl p-1 shadow-sm border border-gray-200">
+                <button id="tab-single" onclick="switchMode('single')" class="px-6 py-2.5 rounded-lg font-semibold text-sm transition-all bg-blue-600 text-white shadow-sm">
+                    ✨ Single
+                </button>
+                <button id="tab-batch" onclick="switchMode('batch')" class="px-6 py-2.5 rounded-lg font-semibold text-sm transition-all text-gray-600 hover:text-gray-800">
+                    📦 Batch
+                </button>
+            </div>
         </div>
 
-        <!-- 输入区域 -->
-        <section class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 relative">
-            <textarea
-                id="textInput"
-                class="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-lg transition-all"
-                placeholder="Type your text here to see the magic..."
-                autofocus></textarea>
-            <button id="clearBtn"
-                    class="absolute top-8 right-8 text-gray-400 hover:text-red-500 transition-colors hidden"
-                    title="Clear text">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+        <!-- ==================== SINGLE MODE ==================== -->
+        <section id="section-single" class="block">
+            <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 relative">
+                <textarea
+                    id="textInput-single"
+                    class="w-full h-28 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg resize-none"
+                    placeholder="Type your text here to see the magic..."
+                    autofocus></textarea>
+                <button id="clearBtn-single" onclick="clearSingleInput()" class="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition-colors hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
             
-            <!-- 批量模式工具栏 -->
-            <div id="batch-toolbar" class="hidden mt-4 pt-4 border-t border-gray-200">
-                <div class="flex flex-wrap gap-3 items-center">
-                    <select id="font-selector" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                        <option value="">Apply same font to all lines</option>
+            <!-- Results -->
+            <section id="resultsContainer-single" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-8"></section>
+        </section>
+
+        <!-- ==================== BATCH MODE ==================== -->
+        <section id="section-batch" class="hidden">
+            <!-- File Import -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                    <span>📁</span> Batch Import
+                </h3>
+                
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <button onclick="document.getElementById('fileInput').click()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Import Files
+                    </button>
+                    <button onclick="document.getElementById('textInput-batch').focus()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Paste Text
+                    </button>
+                    <input type="file" id="fileInput" multiple accept=".txt,.csv,.md,.json" class="hidden" onchange="handleFileImport(this.files)">
+                </div>
+                
+                <textarea
+                    id="textInput-batch"
+                    class="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none mb-4"
+                    placeholder="Or paste multiple lines here (each line = one text block)..."></textarea>
+                
+                <!-- Import List -->
+                <div id="importList" class="space-y-2"></div>
+                
+                <div id="batchEmpty" class="text-center py-6 text-gray-400">
+                    <div class="text-4xl mb-2">📋</div>
+                    <p>Import files or paste text to start</p>
+                    <p class="text-xs mt-1">Supports TXT, CSV files (max 10 files, 1MB each)</p>
+                </div>
+            </div>
+            
+            <!-- Font Selection for Batch -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                    <span>🔤</span> Select Fonts
+                </h3>
+                
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="fontMode" value="single" checked class="accent-blue-600">
+                        <span>Single font</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="fontMode" value="multiple" class="accent-blue-600">
+                        <span>Multiple fonts</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="fontMode" value="combo" class="accent-blue-600">
+                        <span>Use Combo</span>
+                    </label>
+                </div>
+                
+                <!-- Single Font Select -->
+                <div id="singleFontSelect" class="mb-4">
+                    <select id="batchFontSelect" class="w-full md:w-64 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                        <option value="">Select a font...</option>
                     </select>
-                    <button onclick="batchConvert()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
-                        Convert All
-                    </button>
-                    <button onclick="batchSave()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700">
-                        Save Batch
-                    </button>
-                    <button onclick="batchExport()" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700">
-                        Export
+                </div>
+                
+                <!-- Multiple Font Select -->
+                <div id="multiFontSelect" class="hidden mb-4">
+                    <div id="batchFontGrid" class="grid grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200"></div>
+                </div>
+                
+                <!-- Combo Select -->
+                <div id="comboFontSelect" class="hidden">
+                    <select id="batchComboSelect" class="w-full md:w-64 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                        <option value="">Select a combo...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Output Format -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                    <span>📤</span> Output Format
+                </h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <label class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:border-blue-300">
+                        <input type="radio" name="outputFormat" value="merged" checked class="accent-blue-600">
+                        <span class="text-sm">Merged (1 file)</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:border-blue-300">
+                        <input type="radio" name="outputFormat" value="byFont" class="accent-blue-600">
+                        <span class="text-sm">By Font</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:border-blue-300">
+                        <input type="radio" name="outputFormat" value="bySource" class="accent-blue-600">
+                        <span class="text-sm">By Source</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:border-blue-300">
+                        <input type="radio" name="outputFormat" value="zip" class="accent-blue-600">
+                        <span class="text-sm">ZIP All</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Convert & Download -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <button onclick="batchConvert()" id="batchConvertBtn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    🔄 Start Convert
+                </button>
+                
+                <!-- Preview -->
+                <div id="batchPreview" class="mt-4 hidden">
+                    <h4 class="font-bold mb-2">Preview</h4>
+                    <div id="batchPreviewContent" class="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto text-sm font-mono whitespace-pre-wrap"></div>
+                </div>
+                
+                <!-- Download -->
+                <div id="batchDownload" class="mt-4 hidden">
+                    <button onclick="batchDownload()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-green-700 transition flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        📥 Download Results
                     </button>
                 </div>
             </div>
         </section>
 
-        <!-- 字体选择区 -->
-        <section class="mb-6">
+        <!-- Font Styles Section -->
+        <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
             <div class="flex justify-between items-center mb-3">
-                <h3 class="text-lg font-bold text-gray-700">Font Styles</h3>
-                <button onclick="showComboCreator()" class="text-sm text-blue-600 font-semibold hover:text-blue-700 flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
-                    </svg>
-                    Save as Combo
+                <h3 class="text-lg font-bold">🔤 Font Styles</h3>
+                <button onclick="showComboSaveDialog()" class="text-sm text-blue-600 font-semibold hover:text-blue-700">
+                    💾 Save as Combo
                 </button>
             </div>
-            <div id="font-grid" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                <!-- 动态生成字体选择按钮 -->
-            </div>
+            <div id="font-grid" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2"></div>
         </section>
 
-        <!-- 结果展示 -->
-        <section id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4"></section>
-
-        <!-- 广告位 (Free版显示) -->
-        <div id="ad-banner" class="hidden mb-6"></div>
+        <!-- Ad Banner -->
+        <div id="ad-banner" class="mb-6"></div>
     </main>
 
     <!-- Footer -->
@@ -141,40 +229,159 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
         </svg>
-        <span id="toastText">Copied to clipboard!</span>
+        <span id="toastText">Copied!</span>
     </div>
 
-    <!-- 字体生成脚本 -->
     <script src="script.js"></script>
     <script src="membership.js"></script>
     <script>
-        // 字体列表（从 script.js）
-        var fontNames = ['Bold', 'Italic', 'Bold Italic', 'Cursive', 'Bold Cursive', 'Double Struck', 'Bubble', 'Black Bubble', 'Gothic', 'Bold Gothic', 'Square', 'Black Square', 'Monospace', 'Upside Down', 'Small Caps', 'Subscript', 'Superscript', 'Strikethrough', 'Underline', 'Wide', 'Parenthesized', 'Tiny', 'Zalgo', 'Crossed', 'Arrow', 'Heart', 'Star', 'Dot', 'Bracket', 'Wave'];
-        var selectedFonts = [];
-
-        // 初始化
+        // ==================== GLOBALS ====================
+        var currentMode = 'single';
+        var batchFiles = [];  // {name, content}
+        var batchResults = null;
+        var selectedBatchFonts = [];
+        
+        // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('year').textContent = new Date().getFullYear();
             initFontGrid();
-            initFontSelector();
+            initBatchFontSelect();
+            initFontModeRadio();
+            loadCombosToSelect();
+            
+            // Single mode input listener
+            document.getElementById('textInput-single').addEventListener('input', function(e) {
+                var text = e.target.value;
+                document.getElementById('clearBtn-single').style.display = text.length > 0 ? 'block' : 'none';
+                var fonts = generateFonts(text);
+                renderSingleResults(fonts);
+            });
         });
 
-        // 初始化字体选择网格
-        function initFontGrid() {
-            var grid = document.getElementById('font-grid');
-            fontNames.forEach(function(name, index) {
-                var btn = document.createElement('button');
-                btn.className = 'font-btn p-2 rounded-lg bg-gray-100 hover:bg-blue-100 text-sm font-medium text-gray-700 transition-colors';
-                btn.textContent = name;
-                btn.dataset.font = name;
-                btn.onclick = function() { toggleFont(name, index); };
-                grid.appendChild(btn);
+        // ==================== MODE SWITCH ====================
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            var singleTab = document.getElementById('tab-single');
+            var batchTab = document.getElementById('tab-batch');
+            var singleSection = document.getElementById('section-single');
+            var batchSection = document.getElementById('section-batch');
+            
+            if (mode === 'single') {
+                singleTab.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+                singleTab.classList.remove('text-gray-600');
+                batchTab.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+                batchTab.classList.add('text-gray-600');
+                singleSection.classList.remove('hidden');
+                batchSection.classList.add('hidden');
+            } else {
+                batchTab.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+                batchTab.classList.remove('text-gray-600');
+                singleTab.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+                singleTab.classList.add('text-gray-600');
+                batchSection.classList.remove('hidden');
+                singleSection.classList.add('hidden');
+            }
+        }
+
+        // ==================== SINGLE MODE ====================
+        function clearSingleInput() {
+            document.getElementById('textInput-single').value = '';
+            document.getElementById('clearBtn-single').style.display = 'none';
+            renderSingleResults([]);
+        }
+
+        function renderSingleResults(fonts) {
+            var container = document.getElementById('resultsContainer-single');
+            container.innerHTML = '';
+            
+            if (fonts.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">Start typing to see the magic ✨</div>';
+                return;
+            }
+            
+            fonts.forEach(function(font, index) {
+                var card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition flex flex-col justify-between';
+                card.innerHTML = '<div class="flex justify-between items-center mb-2"><span class="text-xs font-semibold text-gray-400 uppercase">' + font.name + '</span><button onclick="copyText(\'' + escapeHtml(font.text) + '\')" class="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg text-sm font-medium transition">Copy</button></div><div class="text-gray-800 text-lg break-words">' + escapeHtml(font.text) + '</div>';
+                container.appendChild(card);
             });
         }
 
-        // 初始化字体下拉选择器（批量模式）
-        function initFontSelector() {
-            var select = document.getElementById('font-selector');
+        // ==================== BATCH MODE ====================
+        function handleFileImport(files) {
+            if (files.length > 10) {
+                showToast('Max 10 files allowed');
+                return;
+            }
+            
+            batchFiles = [];
+            var promises = [];
+            
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                if (file.size > 1024 * 1024) {
+                    showToast('File ' + file.name + ' exceeds 1MB limit');
+                    continue;
+                }
+                
+                (function(f) {
+                    promises.push(f.text().then(function(content) {
+                        batchFiles.push({name: f.name, content: content});
+                    }));
+                })(file);
+            }
+            
+            Promise.all(promises).then(function() {
+                updateImportList();
+            });
+        }
+
+        function updateImportList() {
+            var container = document.getElementById('importList');
+            var emptyMsg = document.getElementById('batchEmpty');
+            
+            if (batchFiles.length === 0) {
+                container.innerHTML = '';
+                emptyMsg.classList.remove('hidden');
+                return;
+            }
+            
+            emptyMsg.classList.add('hidden');
+            container.innerHTML = '<h4 class="font-medium text-sm text-gray-600 mb-2">Imported Files (' + batchFiles.length + '):</h4>';
+            
+            batchFiles.forEach(function(file, index) {
+                var div = document.createElement('div');
+                div.className = 'flex justify-between items-center bg-gray-50 p-2 rounded-lg text-sm';
+                div.innerHTML = '<span class="truncate flex-1">' + file.name + '</span><span class="text-gray-400 mx-2">' + file.content.length + ' chars</span><button onclick="removeFile(' + index + ')" class="text-red-500 hover:text-red-700">✕</button>';
+                container.appendChild(div);
+            });
+            
+            // Also add pasted text as a virtual file
+            var pastedText = document.getElementById('textInput-batch').value.trim();
+            if (pastedText) {
+                var lines = pastedText.split('\n').filter(function(l) { return l.trim(); });
+                if (lines.length > 0) {
+                    var div = document.createElement('div');
+                    div.className = 'flex justify-between items-center bg-blue-50 p-2 rounded-lg text-sm border border-blue-200';
+                    div.innerHTML = '<span class="truncate flex-1">📋 Pasted text (' + lines.length + ' lines)</span><span class="text-gray-400 mx-2">' + pastedText.length + ' chars</span><button onclick="clearPastedText()" class="text-red-500 hover:text-red-700">✕</button>';
+                    container.appendChild(div);
+                }
+            }
+        }
+
+        function removeFile(index) {
+            batchFiles.splice(index, 1);
+            updateImportList();
+        }
+
+        function clearPastedText() {
+            document.getElementById('textInput-batch').value = '';
+            updateImportList();
+        }
+
+        function initBatchFontSelect() {
+            var select = document.getElementById('batchFontSelect');
             fontNames.forEach(function(name) {
                 var opt = document.createElement('option');
                 opt.value = name;
@@ -183,207 +390,336 @@
             });
         }
 
-        // 切换字体选择
-        function toggleFont(name, index) {
-            var btn = document.querySelector('[data-font="' + name + '"]');
-            var pos = selectedFonts.indexOf(name);
+        function initFontModeRadio() {
+            var radios = document.getElementsByName('fontMode');
+            for (var i = 0; i < radios.length; i++) {
+                radios[i].addEventListener('change', function() {
+                    var mode = this.value;
+                    document.getElementById('singleFontSelect').classList.toggle('hidden', mode !== 'single');
+                    document.getElementById('multiFontSelect').classList.toggle('hidden', mode !== 'multiple');
+                    document.getElementById('comboFontSelect').classList.toggle('hidden', mode !== 'combo');
+                });
+            }
+        }
+
+        function loadCombosToSelect() {
+            var combos = JSON.parse(localStorage.getItem('fg_font_combos') || '[]');
+            var selects = [document.getElementById('batchComboSelect')];
+            selects.forEach(function(select) {
+                if (!select) return;
+                // Clear existing options except first
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+                combos.forEach(function(combo) {
+                    var opt = document.createElement('option');
+                    opt.value = combo.fonts ? combo.fonts.join(',') : '';
+                    opt.textContent = combo.name + ' (' + (combo.fonts ? combo.fonts.length : 0) + ' fonts)';
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        function batchConvert() {
+            // Collect all text sources
+            var allTexts = [];
             
-            if (pos > -1) {
-                selectedFonts.splice(pos, 1);
+            // Add files
+            batchFiles.forEach(function(file) {
+                allTexts.push({source: file.name, content: file.content});
+            });
+            
+            // Add pasted text
+            var pasted = document.getElementById('textInput-batch').value.trim();
+            if (pasted) {
+                allTexts.push({source: 'pasted_text', content: pasted});
+            }
+            
+            if (allTexts.length === 0) {
+                showToast('Please import files or paste text first');
+                return;
+            }
+            
+            // Get selected fonts
+            var fontMode = document.querySelector('input[name="fontMode"]:checked').value;
+            var fontsToUse = [];
+            
+            if (fontMode === 'single') {
+                var selected = document.getElementById('batchFontSelect').value;
+                if (!selected) {
+                    showToast('Please select a font');
+                    return;
+                }
+                fontsToUse = [selected];
+            } else if (fontMode === 'multiple') {
+                fontsToUse = selectedBatchFonts;
+                if (fontsToUse.length === 0) {
+                    showToast('Please select at least one font');
+                    return;
+                }
+            } else if (fontMode === 'combo') {
+                var comboValue = document.getElementById('batchComboSelect').value;
+                if (!comboValue) {
+                    showToast('Please select a combo');
+                    return;
+                }
+                fontsToUse = comboValue.split(',');
+            }
+            
+            // Convert
+            batchResults = [];
+            allTexts.forEach(function(text) {
+                var lines = text.content.split('\n');
+                lines.forEach(function(line) {
+                    if (!line.trim()) return;
+                    fontsToUse.forEach(function(fontName) {
+                        var font = fontDictionaries.find(function(f) { return f.name === fontName; });
+                        if (font) {
+                            var result = convertText(line, font);
+                            batchResults.push({
+                                source: text.source,
+                                font: fontName,
+                                input: line,
+                                output: result
+                            });
+                        }
+                    });
+                });
+            });
+            
+            // Show preview
+            var previewDiv = document.getElementById('batchPreview');
+            var downloadDiv = document.getElementById('batchDownload');
+            var previewContent = document.getElementById('batchPreviewContent');
+            
+            if (batchResults.length === 0) {
+                showToast('No results generated');
+                return;
+            }
+            
+            // Build preview text
+            var previewText = '';
+            var grouped = {};
+            batchResults.forEach(function(r) {
+                var key = r.source + ' → ' + r.font;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(r);
+            });
+            
+            Object.keys(grouped).forEach(function(key) {
+                previewText += '═══ ' + key + ' ═══\n';
+                grouped[key].forEach(function(r) {
+                    previewText += r.output + '\n';
+                });
+                previewText += '\n';
+            });
+            
+            previewContent.textContent = previewText.substring(0, 2000) + (previewText.length > 2000 ? '\n... (truncated)' : '');
+            previewDiv.classList.remove('hidden');
+            downloadDiv.classList.remove('hidden');
+            
+            showToast('Converted ' + batchResults.length + ' results!');
+        }
+
+        function convertText(text, font) {
+            var chars = Array.from(text);
+            return chars.map(function(c) {
+                var idx = baseChars.indexOf(c);
+                return idx >= 0 ? font.map[idx] : c;
+            }).join('');
+        }
+
+        function batchDownload() {
+            if (!batchResults || batchResults.length === 0) {
+                showToast('No results to download');
+                return;
+            }
+            
+            var format = document.querySelector('input[name="outputFormat"]:checked').value;
+            
+            if (format === 'merged') {
+                downloadMerged();
+            } else if (format === 'byFont') {
+                downloadByFont();
+            } else if (format === 'bySource') {
+                downloadBySource();
+            } else if (format === 'zip') {
+                downloadZip();
+            }
+        }
+
+        function downloadMerged() {
+            var content = '';
+            batchResults.forEach(function(r) {
+                content += '[' + r.font + '] ' + r.output + '\n\n';
+            });
+            downloadFile('font_generator_merged.txt', content);
+        }
+
+        function downloadByFont() {
+            var grouped = {};
+            batchResults.forEach(function(r) {
+                if (!grouped[r.font]) grouped[r.font] = [];
+                grouped[r.font].push(r);
+            });
+            
+            var content = '';
+            Object.keys(grouped).forEach(function(font) {
+                content += '═══ ' + font + ' ═══\n';
+                grouped[font].forEach(function(r) {
+                    content += '[' + r.source + '] ' + r.output + '\n';
+                });
+                content += '\n';
+            });
+            downloadFile('font_generator_by_font.txt', content);
+        }
+
+        function downloadBySource() {
+            var grouped = {};
+            batchResults.forEach(function(r) {
+                if (!grouped[r.source]) grouped[r.source] = [];
+                grouped[r.source].push(r);
+            });
+            
+            var content = '';
+            Object.keys(grouped).forEach(function(source) {
+                content += '═══ ' + source + ' ═══\n';
+                grouped[source].forEach(function(r) {
+                    content += '[' + r.font + '] ' + r.output + '\n';
+                });
+                content += '\n';
+            });
+            downloadFile('font_generator_by_source.txt', content);
+        }
+
+        function downloadZip() {
+            // Simple approach: download as a combined file with clear separators
+            var content = 'FONT GENERATOR - BATCH RESULTS\n';
+            content += 'Generated: ' + new Date().toLocaleString() + '\n';
+            content += 'Total results: ' + batchResults.length + '\n';
+            content += '=' .repeat(50) + '\n\n';
+            
+            var grouped = {};
+            batchResults.forEach(function(r) {
+                if (!grouped[r.source]) grouped[r.source] = {};
+                if (!grouped[r.source][r.font]) grouped[r.source][r.font] = [];
+                grouped[r.source][r.font].push(r.output);
+            });
+            
+            Object.keys(grouped).forEach(function(source) {
+                content += '\n📄 ' + source + '\n';
+                Object.keys(grouped[source]).forEach(function(font) {
+                    content += '\n  ── ' + font + ' ──\n';
+                    grouped[source][font].forEach(function(out) {
+                        content += '  ' + out + '\n';
+                    });
+                });
+                content += '\n' + '─'.repeat(40) + '\n';
+            });
+            
+            downloadFile('font_generator_batch.zip.txt', content);
+            showToast('Downloaded! (ZIP as single file - rename to .zip if needed)');
+        }
+
+        function downloadFile(filename, content) {
+            var blob = new Blob([content], {type: 'text/plain'});
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ==================== FONT GRID ====================
+        function initFontGrid() {
+            var grid = document.getElementById('font-grid');
+            fontNames.forEach(function(name) {
+                var btn = document.createElement('button');
+                btn.className = 'font-btn p-2 rounded-lg bg-gray-100 hover:bg-blue-100 text-sm font-medium text-gray-700 transition';
+                btn.textContent = name;
+                btn.dataset.font = name;
+                btn.onclick = function() { toggleBatchFont(name); };
+                grid.appendChild(btn);
+            });
+        }
+
+        function toggleBatchFont(name) {
+            var btn = document.querySelector('[data-font="' + name + '"]');
+            var idx = selectedBatchFonts.indexOf(name);
+            
+            if (idx >= 0) {
+                selectedBatchFonts.splice(idx, 1);
                 btn.classList.remove('bg-blue-600', 'text-white');
                 btn.classList.add('bg-gray-100');
             } else {
-                selectedFonts.push(name);
+                selectedBatchFonts.push(name);
                 btn.classList.remove('bg-gray-100');
                 btn.classList.add('bg-blue-600', 'text-white');
             }
-        }
-
-        // 模式切换
-        function setMode(mode) {
-            var singleBtn = document.getElementById('mode-single');
-            var batchBtn = document.getElementById('mode-batch');
-            var toolbar = document.getElementById('batch-toolbar');
-            var input = document.getElementById('textInput');
             
-            if (mode === 'single') {
-                singleBtn.classList.remove('bg-gray-100', 'text-gray-700');
-                singleBtn.classList.add('bg-blue-600', 'text-white');
-                batchBtn.classList.remove('bg-blue-600', 'text-white');
-                batchBtn.classList.add('bg-gray-100', 'text-gray-700');
-                toolbar.classList.add('hidden');
-                input.placeholder = 'Type your text here to see the magic...';
-            } else {
-                // 批量模式（暂时不做Pro限制）
-                batchBtn.classList.remove('bg-gray-100', 'text-gray-700');
-                batchBtn.classList.add('bg-blue-600', 'text-white');
-                singleBtn.classList.remove('bg-blue-600', 'text-white');
-                singleBtn.classList.add('bg-gray-100', 'text-gray-700');
-                toolbar.classList.remove('hidden');
-                input.placeholder = 'Enter each text on a new line...\nLine 1\nLine 2\nLine 3';
+            // Update batch font grid
+            var batchGrid = document.getElementById('batchFontGrid');
+            if (batchGrid) {
+                batchGrid.innerHTML = '';
+                fontNames.forEach(function(name) {
+                    var btn = document.createElement('button');
+                    btn.className = 'p-2 rounded text-xs font-medium transition ' + (selectedBatchFonts.indexOf(name) >= 0 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200');
+                    btn.textContent = name;
+                    btn.onclick = function() { toggleBatchFont(name); };
+                    batchGrid.appendChild(btn);
+                });
             }
         }
 
-        // 批量转换
-        async function batchConvert() {
-            var input = document.getElementById('textInput').value;
-            if (!input.trim()) {
-                alert('Please enter some text');
+        // ==================== COMBO ====================
+        function showComboSaveDialog() {
+            if (selectedBatchFonts.length === 0) {
+                showToast('Please select fonts first!');
                 return;
             }
             
-            var lines = input.split('\n').filter(function(l) { return l.trim(); });
-            var fontSelect = document.getElementById('font-selector');
-            var selectedFont = fontSelect.value;
-            
-            var results = [];
-            
-            if (selectedFont) {
-                // 统一字体
-                lines.forEach(function(line) {
-                    var result = generateFonts(line).find(function(f) { return f.name === selectedFont; });
-                    if (result) {
-                        results.push({ input: line, font: selectedFont, output: result.text });
-                    }
-                });
-            } else {
-                // 全部字体
-                lines.forEach(function(line) {
-                    var fonts = generateFonts(line);
-                    fonts.forEach(function(f) {
-                        results.push({ input: line, font: f.name, output: f.text });
-                    });
-                });
-            }
-            
-            renderBatchResults(results);
-        }
-
-        // 渲染批量结果
-        function renderBatchResults(results) {
-            var container = document.getElementById('resultsContainer');
-            container.innerHTML = '';
-            
-            if (results.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">No results</div>';
-                return;
-            }
-            
-            results.forEach(function(r, i) {
-                var card = document.createElement('div');
-                card.className = 'bg-white p-3 rounded-lg border border-gray-100 text-sm';
-                
-                var fontLabel = document.createElement('div');
-                fontLabel.className = 'text-xs text-gray-400 mb-1';
-                fontLabel.textContent = r.font;
-                card.appendChild(fontLabel);
-                
-                var inputText = document.createElement('div');
-                inputText.className = 'text-gray-600 mb-2 line-clamp-2';
-                inputText.textContent = r.input;
-                card.appendChild(inputText);
-                
-                var outputText = document.createElement('div');
-                outputText.className = 'text-gray-800 font-medium mb-2';
-                outputText.textContent = r.output;
-                card.appendChild(outputText);
-                
-                var copyBtn = document.createElement('button');
-                copyBtn.className = 'text-blue-600 text-xs font-medium';
-                copyBtn.textContent = 'Copy';
-                copyBtn.onclick = (function(idx) {
-                    return function() { copyToClipboard(String(idx)); };
-                })(i);
-                card.appendChild(copyBtn);
-                
-                container.appendChild(card);
-            });
-        }
-
-        // 保存批量（暂时不做Pro限制）
-        async function batchSave() {
-            var input = document.getElementById('textInput').value;
-            var lines = input.split('\n').filter(function(l) { return l.trim(); });
-            
-            var records = [];
-            lines.forEach(function(line) {
-                var fonts = generateFonts(line);
-                fonts.forEach(function(f) {
-                    records.push({
-                        inputText: line,
-                        fontStyle: f.name,
-                        outputText: f.text
-                    });
-                });
-            });
-            
-            // 如果已登录且是Pro用户，保存到云端
-            if (membershipStatus.isPro && membershipStatus.idToken) {
-                var batchId = await saveBatchHistory(records, 'Batch ' + new Date().toLocaleDateString());
-                if (batchId) {
-                    alert('Saved to cloud! Batch ID: ' + batchId);
-                }
-            } else {
-                // 否则本地保存
-                var saved = JSON.parse(localStorage.getItem('fg_batch_history') || '[]');
-                saved.unshift({ records: records, date: new Date().toLocaleString() });
-                localStorage.setItem('fg_batch_history', JSON.stringify(saved.slice(0, 20)));
-                alert('Saved locally! ' + records.length + ' records');
-            }
-        }
-
-        // 批量导出
-        function batchExport() {
-            // 暂用简化版
-            window.print();
-        }
-
-        // 保存为组合（暂时不做Pro限制）
-        function showComboCreator() {
-            if (selectedFonts.length === 0) {
-                alert('Please select at least one font first!');
-                return;
-            }
-            
-            var name = prompt('Enter a name for this combo:');
+            var name = prompt('Enter combo name:', 'My Combo ' + (selectedBatchFonts.length) + ' fonts');
             if (!name) return;
             
-            // 如果已登录且是Pro用户，保存到云端
-            if (membershipStatus.isPro && membershipStatus.idToken) {
-                saveFontCombo(name, selectedFonts).then(function(id) {
-                    if (id) {
-                        alert('Combo saved to cloud! ID: ' + id);
-                    }
-                });
-            } else {
-                // 否则本地保存
-                var saved = JSON.parse(localStorage.getItem('fg_font_combos') || '[]');
-                saved.push({ name: name, fonts: selectedFonts, date: new Date().toLocaleString() });
-                localStorage.setItem('fg_font_combos', JSON.stringify(saved));
-                alert('Combo saved locally! ' + selectedFonts.length + ' fonts');
-            }
+            var combos = JSON.parse(localStorage.getItem('fg_font_combos') || '[]');
+            combos.push({
+                name: name,
+                fonts: selectedBatchFonts.slice(),
+                date: new Date().toLocaleString()
+            });
+            localStorage.setItem('fg_font_combos', JSON.stringify(combos));
+            
+            loadCombosToSelect();
+            showToast('Combo saved: ' + name);
         }
 
-        // 复制（支持批量）
-        window.copyToClipboard = function(index) {
-            var text = '';
-            
-            if (typeof index === 'string' && !isNaN(parseInt(index))) {
-                // 批量模式
-                var results = document.querySelectorAll('#resultsContainer .font-medium');
-                text = results[parseInt(index)].innerText;
-            } else {
-                // 单条模式
-                text = document.getElementById('result-' + index).innerText;
-            }
-            
+        // ==================== UTILS ====================
+        function copyText(text) {
             navigator.clipboard.writeText(text).then(function() {
                 showToast('Copied!');
             });
-        };
+        }
 
-        // 覆盖原有一键复制
-        window.originalCopy = window.copyToClipboard;
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(msg) {
+            var toast = document.getElementById('toast');
+            var toastText = document.getElementById('toastText');
+            toastText.textContent = msg;
+            toast.classList.add('opacity-100');
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(function() {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
     </script>
 </body>
 </html>
