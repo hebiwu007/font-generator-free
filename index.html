@@ -13,16 +13,16 @@
     <!-- 自定义样式 -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- Auth 模块：放 head 里提前加载，让函数定义早于 GIS 回调 -->
+    <!-- Auth 模块 -->
     <script src="auth.js"></script>
 
-    <!-- Google Identity Services：放 auth.js 之后，GIS 加载完时 auth.js 已就绪 -->
+    <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
     <!-- Header -->
-    <header class="bg-white shadow-sm py-4 mb-8 px-4">
+    <header class="bg-white shadow-sm py-4 mb-6 px-4">
         <div class="container mx-auto max-w-4xl flex items-center justify-between flex-wrap gap-3">
             <!-- 标题 -->
             <div class="text-center flex-1">
@@ -32,23 +32,31 @@
                 <h2 class="text-gray-500 text-sm md:text-base">Instantly generate cool fancy text. Copy & Paste anywhere!</h2>
             </div>
 
-            <!-- Auth 区域 -->
+            <!-- 右侧工具栏 -->
             <div class="flex items-center gap-3 flex-shrink-0">
+                <!-- Pro 工具（已登录用户可见） -->
+                <div id="pro-tools" class="hidden items-center gap-2">
+                    <a href="history.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700 flex items-center gap-1" title="History">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        History
+                    </a>
+                    <a href="combo.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700 flex items-center gap-1" title="My Combos">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        Combos
+                    </a>
+                </div>
+                
                 <a href="pricing.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Pricing</a>
                 <span id="pro-badge" style="display:none;"></span>
-                <!-- Google 登录按钮容器，GIS renderButton 将注入到这里 -->
                 <div id="auth-login-btn"></div>
-
-                <!-- 已登录用户信息（默认隐藏） -->
                 <div id="auth-user-info" style="display:none;" class="flex items-center gap-2">
-                    <img id="auth-user-avatar" src="" alt="User avatar"
-                         class="w-8 h-8 rounded-full object-cover border-2 border-blue-200">
-                    <span id="auth-user-name"
-                          class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
-                    <button onclick="signOut()"
-                            class="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50">
-                        Sign out
-                    </button>
+                    <img id="auth-user-avatar" src="" alt="User avatar" class="w-8 h-8 rounded-full object-cover border-2 border-blue-200">
+                    <span id="auth-user-name" class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
+                    <button onclick="signOut()" class="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50">Sign out</button>
                 </div>
             </div>
         </div>
@@ -56,7 +64,18 @@
 
     <!-- Main -->
     <main class="flex-grow container mx-auto px-4 max-w-4xl">
-        <section class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 relative">
+        <!-- 模式切换 -->
+        <div class="flex justify-center mb-4 gap-2">
+            <button id="mode-single" onclick="setMode('single')" class="px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white">
+                ✨ Single
+            </button>
+            <button id="mode-batch" onclick="setMode('batch')" class="px-4 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200">
+                📦 Batch <span class="text-xs bg-yellow-500 text-white px-1.5 py-0.5 rounded-full">PRO</span>
+            </button>
+        </div>
+
+        <!-- 输入区域 -->
+        <section class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 relative">
             <textarea
                 id="textInput"
                 class="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-lg transition-all"
@@ -69,9 +88,47 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
+            
+            <!-- 批量模式工具栏 -->
+            <div id="batch-toolbar" class="hidden mt-4 pt-4 border-t border-gray-200">
+                <div class="flex flex-wrap gap-3 items-center">
+                    <select id="font-selector" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                        <option value="">Apply same font to all lines</option>
+                    </select>
+                    <button onclick="batchConvert()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
+                        Convert All
+                    </button>
+                    <button onclick="batchSave()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700">
+                        Save Batch
+                    </button>
+                    <button onclick="batchExport()" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700">
+                        Export
+                    </button>
+                </div>
+            </div>
         </section>
 
-        <section id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12"></section>
+        <!-- 字体选择区 -->
+        <section class="mb-6">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-bold text-gray-700">Font Styles</h3>
+                <button onclick="showComboCreator()" class="text-sm text-blue-600 font-semibold hover:text-blue-700 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
+                    </svg>
+                    Save as Combo
+                </button>
+            </div>
+            <div id="font-grid" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                <!-- 动态生成字体选择按钮 -->
+            </div>
+        </section>
+
+        <!-- 结果展示 -->
+        <section id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4"></section>
+
+        <!-- 广告位 (Free版显示) -->
+        <div id="ad-banner" class="hidden mb-6"></div>
     </main>
 
     <!-- Footer -->
@@ -90,5 +147,223 @@
     <!-- 字体生成脚本 -->
     <script src="script.js"></script>
     <script src="membership.js"></script>
+    <script>
+        // 字体列表（从 script.js）
+        var fontNames = ['Bold', 'Italic', 'Bold Italic', 'Cursive', 'Bold Cursive', 'Double Struck', 'Bubble', 'Black Bubble', 'Gothic', 'Bold Gothic', 'Square', 'Black Square', 'Monospace', 'Upside Down', 'Small Caps', 'Subscript', 'Superscript', 'Strikethrough', 'Underline', 'Wide', 'Parenthesized', 'Tiny', 'Zalgo', 'Crossed', 'Arrow', 'Heart', 'Star', 'Dot', 'Bracket', 'Wave'];
+        var selectedFonts = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('year').textContent = new Date().getFullYear();
+            initFontGrid();
+            initFontSelector();
+            
+            // 认证成功后显示 Pro 工具
+            if (window.membershipStatus && window.membershipStatus.isPro) {
+                document.getElementById('pro-tools').classList.remove('hidden');
+                document.getElementById('pro-tools').classList.add('flex');
+            }
+        });
+
+        // 初始化字体选择网格
+        function initFontGrid() {
+            var grid = document.getElementById('font-grid');
+            fontNames.forEach(function(name, index) {
+                var btn = document.createElement('button');
+                btn.className = 'font-btn p-2 rounded-lg bg-gray-100 hover:bg-blue-100 text-sm font-medium text-gray-700 transition-colors';
+                btn.textContent = name;
+                btn.dataset.font = name;
+                btn.onclick = function() { toggleFont(name, index); };
+                grid.appendChild(btn);
+            });
+        }
+
+        // 初始化字体下拉选择器（批量模式）
+        function initFontSelector() {
+            var select = document.getElementById('font-selector');
+            fontNames.forEach(function(name) {
+                var opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                select.appendChild(opt);
+            });
+        }
+
+        // 切换字体选择
+        function toggleFont(name, index) {
+            var btn = document.querySelector('[data-font="' + name + '"]');
+            var pos = selectedFonts.indexOf(name);
+            
+            if (pos > -1) {
+                selectedFonts.splice(pos, 1);
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-100');
+            } else {
+                selectedFonts.push(name);
+                btn.classList.remove('bg-gray-100');
+                btn.classList.add('bg-blue-600', 'text-white');
+            }
+        }
+
+        // 模式切换
+        function setMode(mode) {
+            var singleBtn = document.getElementById('mode-single');
+            var batchBtn = document.getElementById('mode-batch');
+            var toolbar = document.getElementById('batch-toolbar');
+            var input = document.getElementById('textInput');
+            
+            if (mode === 'single') {
+                singleBtn.classList.remove('bg-gray-100', 'text-gray-700');
+                singleBtn.classList.add('bg-blue-600', 'text-white');
+                batchBtn.classList.remove('bg-blue-600', 'text-white');
+                batchBtn.classList.add('bg-gray-100', 'text-gray-700');
+                toolbar.classList.add('hidden');
+                input.placeholder = 'Type your text here to see the magic...';
+            } else {
+                // 需要 Pro 权限
+                if (!requirePro()) {
+                    batchBtn.classList.remove('bg-blue-600', 'text-white');
+                    batchBtn.classList.add('bg-gray-100', 'text-gray-700');
+                    return;
+                }
+                batchBtn.classList.remove('bg-gray-100', 'text-gray-700');
+                batchBtn.classList.add('bg-blue-600', 'text-white');
+                singleBtn.classList.remove('bg-blue-600', 'text-white');
+                singleBtn.classList.add('bg-gray-100', 'text-gray-700');
+                toolbar.classList.remove('hidden');
+                input.placeholder = 'Enter each text on a new line...\nLine 1\nLine 2\nLine 3';
+            }
+        }
+
+        // 批量转换
+        async function batchConvert() {
+            var input = document.getElementById('textInput').value;
+            if (!input.trim()) {
+                alert('Please enter some text');
+                return;
+            }
+            
+            var lines = input.split('\n').filter(function(l) { return l.trim(); });
+            var fontSelect = document.getElementById('font-selector');
+            var selectedFont = fontSelect.value;
+            
+            var results = [];
+            
+            if (selectedFont) {
+                // 统一字体
+                lines.forEach(function(line) {
+                    var result = generateFonts(line).find(function(f) { return f.name === selectedFont; });
+                    if (result) {
+                        results.push({ input: line, font: selectedFont, output: result.text });
+                    }
+                });
+            } else {
+                // 全部字体
+                lines.forEach(function(line) {
+                    var fonts = generateFonts(line);
+                    fonts.forEach(function(f) {
+                        results.push({ input: line, font: f.name, output: f.text });
+                    });
+                });
+            }
+            
+            renderBatchResults(results);
+        }
+
+        // 渲染批量结果
+        function renderBatchResults(results) {
+            var container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+            
+            if (results.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">No results</div>';
+                return;
+            }
+            
+            results.forEach(function(r, i) {
+                var card = document.createElement('div');
+                card.className = 'bg-white p-3 rounded-lg border border-gray-100 text-sm';
+                card.innerHTML = '
+                    <div class="text-xs text-gray-400 mb-1">' + r.font + '</div>
+                    <div class="text-gray-600 mb-2 line-clamp-2">' + r.input + '</div>
+                    <div class="text-gray-800 font-medium mb-2">' + r.output + '</div>
+                    <button onclick="copyToClipboard(\'' + i + '\')" class="text-blue-600 text-xs font-medium">Copy</button>
+                ';
+                container.appendChild(card);
+            });
+        }
+
+        // 保存批量
+        async function batchSave() {
+            if (!membershipStatus.isPro) {
+                showUpgradeModal();
+                return;
+            }
+            
+            var input = document.getElementById('textInput').value;
+            var lines = input.split('\n').filter(function(l) { return l.trim(); });
+            
+            var records = [];
+            lines.forEach(function(line) {
+                var fonts = generateFonts(line);
+                fonts.forEach(function(f) {
+                    records.push({
+                        inputText: line,
+                        fontStyle: f.name,
+                        outputText: f.text
+                    });
+                });
+            });
+            
+            var batchId = await saveBatchHistory(records, 'Batch ' + new Date().toLocaleDateString());
+            if (batchId) {
+                alert('Saved! Batch ID: ' + batchId);
+            }
+        }
+
+        // 批量导出
+        function batchExport() {
+            // 暂用简化版
+            window.print();
+        }
+
+        // 保存为组合
+        function showComboCreator() {
+            if (selectedFonts.length === 0) {
+                alert('Please select at least one font');
+                return;
+            }
+            
+            var name = prompt('Enter a name for this combo:');
+            if (!name) return;
+            
+            saveFontCombo(name, selectedFonts).then(function(id) {
+                if (id) {
+                    alert('Combo saved! ID: ' + id);
+                }
+            });
+        }
+
+        // 复制（支持批量）
+        window.copyToClipboard = function(index) {
+            var text = '';
+            
+            if (typeof index === 'string' && !isNaN(parseInt(index))) {
+                // 批量模式
+                var results = document.querySelectorAll('#resultsContainer .font-medium');
+                text = results[parseInt(index)].innerText;
+            } else {
+                // 单条模式
+                text = document.getElementById('result-' + index).innerText;
+            }
+            
+            navigator.clipboard.writeText(text).then(function() {
+                showToast('Copied!');
+            });
+        };
+
+        // 覆盖原有一键复制
+        window.originalCopy = window.copyToClipboard;
+    </script>
 </body>
 </html>

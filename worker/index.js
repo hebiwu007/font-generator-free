@@ -1,9 +1,10 @@
 /**
  * Cloudflare Worker - Font Generator Free API
- * 处理用户认证、会员状态、历史记录、支付
+ * 包含: 用户认证、会员状态、历史记录、字体组合、广告、支付
  */
 
 import { handleCreateOrder, handleCaptureOrder, handleWebhook } from './payment.js';
+import * as ProApi from './pro_api.js';
 
 export default {
   async fetch(request, env) {
@@ -14,7 +15,7 @@ export default {
       return new Response(null, {
         headers: {
           'Access-Control-Allow-Origin': 'https://fontgeneratorfree.online',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         }
       });
@@ -26,19 +27,48 @@ export default {
     };
 
     try {
-      // 路由
+      // === 用户相关 ===
       if (url.pathname === '/api/user/sync') {
-        return handleUserSync(request, env, corsHeaders);
+        return ProApi.handleUserSync(request, env, corsHeaders);
       }
       if (url.pathname === '/api/user/status') {
-        return handleUserStatus(request, env, corsHeaders);
+        return ProApi.handleUserStatus(request, env, corsHeaders);
       }
+
+      // === 历史记录相关 ===
       if (url.pathname === '/api/history/save') {
-        return handleHistorySave(request, env, corsHeaders);
+        return ProApi.handleHistorySave(request, env, corsHeaders);
+      }
+      if (url.pathname === '/api/history/batch-save') {
+        return ProApi.handleHistoryBatchSave(request, env, corsHeaders);
       }
       if (url.pathname === '/api/history/list') {
-        return handleHistoryList(request, env, corsHeaders);
+        return ProApi.handleHistoryList(request, env, corsHeaders);
       }
+      if (url.pathname === '/api/history/batch-get') {
+        return ProApi.handleHistoryBatchGet(request, env, corsHeaders);
+      }
+      if (url.pathname === '/api/history/delete') {
+        return ProApi.handleHistoryDelete(request, env, corsHeaders);
+      }
+
+      // === 字体组合相关 ===
+      if (url.pathname === '/api/combo/save') {
+        return ProApi.handleComboSave(request, env, corsHeaders);
+      }
+      if (url.pathname === '/api/combo/list') {
+        return ProApi.handleComboList(request, env, corsHeaders);
+      }
+      if (url.pathname === '/api/combo/delete') {
+        return ProApi.handleComboDelete(request, env, corsHeaders);
+      }
+
+      // === 广告相关 ===
+      if (url.pathname === '/api/ads/get') {
+        return ProApi.handleAdsGet(request, env, corsHeaders);
+      }
+
+      // === 支付相关 ===
       if (url.pathname === '/api/payment/create-order') {
         return handleCreateOrder(request, env, corsHeaders);
       }
@@ -49,30 +79,16 @@ export default {
         return handleWebhook(request, env, corsHeaders);
       }
       
-      return new Response(JSON.stringify({ error: 'Not found' }), { 
+      // 404
+      return new Response(JSON.stringify({ error: 'Not found', path: url.pathname }), { 
         status: 404, 
         headers: corsHeaders 
       });
     } catch (error) {
-      return new Response(JSON.stringify({ error: error.message }), { 
+      return new Response(JSON.stringify({ error: error.message, stack: error.stack }), { 
         status: 500, 
         headers: corsHeaders 
       });
     }
   }
 };
-
-// 验证 Google ID Token（简化版，生产环境需完整验证）
-async function verifyGoogleToken(idToken) {
-  // 解析 JWT payload
-  const parts = idToken.split('.');
-  if (parts.length !== 3) return null;
-  const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-  
-  // 基础校验
-  const now = Math.floor(Date.now() / 1000);
-  if (payload.exp < now) return null;
-  if (payload.aud !== '1070692973169-kh4nort1uo59s8oq2159dqn6pc0cfp6e.apps.googleusercontent.com') return null;
-  
-  return payload;
-}

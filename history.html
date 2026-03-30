@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History - Font Generator Free</title>
+    <link rel="canonical" href="https://fontgeneratorfree.online/history.html" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="auth.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm py-4 px-4">
+        <div class="container mx-auto max-w-4xl flex items-center justify-between flex-wrap gap-3">
+            <a href="index.html" class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                Font Generator Free
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Generator</a>
+                <a href="pricing.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Pricing</a>
+                <span id="pro-badge" style="display:none;"></span>
+                <div id="auth-login-btn"></div>
+                <div id="auth-user-info" style="display:none;" class="flex items-center gap-2">
+                    <img id="auth-user-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full border-2 border-blue-200">
+                    <span id="auth-user-name" class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
+                    <button onclick="signOut()" class="text-xs text-gray-400 hover:text-red-500">Sign out</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 max-w-4xl py-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Your History</h1>
+            <div class="flex gap-2">
+                <button onclick="filterHistory('all')" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white">All</button>
+                <button onclick="filterHistory('batch')" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200">Batch</button>
+            </div>
+        </div>
+
+        <!-- Pro 提示 -->
+        <div id="pro-prompt" class="hidden bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white mb-6">
+            <h2 class="text-xl font-bold mb-2">🔒 Pro Feature</h2>
+            <p class="mb-4">Upgrade to Pro to unlock cloud history, batch conversion, and more!</p>
+            <a href="pricing.html" class="inline-block bg-white text-blue-700 px-6 py-2 rounded-lg font-bold hover:bg-blue-50">View Plans</a>
+        </div>
+
+        <!-- 批量记录列表 -->
+        <div id="batch-list" class="space-y-4 mb-8"></div>
+
+        <!-- 单条记录列表 -->
+        <div id="single-list" class="space-y-3"></div>
+
+        <!-- 空状态 -->
+        <div id="empty-state" class="hidden text-center py-12">
+            <div class="text-6xl mb-4">📝</div>
+            <h3 class="text-xl font-bold text-gray-700 mb-2">No history yet</h3>
+            <p class="text-gray-500 mb-4">Start generating fonts to see your history here</p>
+            <a href="index.html" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">Go to Generator</a>
+        </div>
+
+        <!-- 加载中 -->
+        <div id="loading" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+            <p class="text-gray-500 mt-4">Loading history...</p>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 py-6 text-center text-gray-500 text-sm mt-auto">
+        <p>© <span id="year"></span> Font Generator Free. All rights reserved.</p>
+    </footer>
+
+    <script src="membership.js"></script>
+    <script>
+        var currentFilter = 'all';
+        var loadedHistory = [];
+
+        // 初始化
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // 检查登录并加载历史
+        async function init() {
+            await waitForAuth();
+            
+            if (!window.membershipStatus || !window.membershipStatus.isPro) {
+                document.getElementById('pro-prompt').classList.remove('hidden');
+            }
+            
+            await loadHistory();
+        }
+
+        // 等待认证
+        function waitForAuth() {
+            return new Promise(resolve => {
+                if (window.googleUser) {
+                    syncUserToBackend(window.googleUser, window.idToken).then(() => resolve());
+                } else {
+                    // 检查本地存储
+                    var savedUser = localStorage.getItem('fg_user');
+                    var savedToken = localStorage.getItem('fg_idToken');
+                    if (savedUser && savedToken) {
+                        var user = JSON.parse(savedUser);
+                        syncUserToBackend(user, savedToken).then(() => resolve());
+                    } else {
+                        // 未登录
+                        document.getElementById('pro-prompt').classList.remove('hidden');
+                        document.getElementById('loading').classList.add('hidden');
+                        showEmptyState();
+                        resolve();
+                    }
+                }
+            });
+        }
+
+        // 加载历史记录
+        async function loadHistory() {
+            document.getElementById('loading').classList.remove('hidden');
+            
+            try {
+                var history = await getHistoryList(100, 0, currentFilter === 'batch');
+                loadedHistory = history;
+                
+                if (history.length === 0) {
+                    showEmptyState();
+                } else {
+                    renderHistory(history);
+                }
+            } catch (error) {
+                console.error('Load history error:', error);
+                showEmptyState();
+            }
+            
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        // 渲染历史记录
+        function renderHistory(history) {
+            document.getElementById('empty-state').classList.add('hidden');
+            
+            if (currentFilter === 'batch') {
+                renderBatchList(history);
+            } else {
+                renderSingleList(history);
+            }
+        }
+
+        // 渲染批量记录
+        function renderBatchList(history) {
+            var container = document.getElementById('batch-list');
+            container.innerHTML = '';
+            
+            history.forEach(function(item) {
+                var div = document.createElement('div');
+                div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-semibold text-gray-400 uppercase">Batch #${item.batch_id}</span>
+                            <p class="text-gray-700 font-medium">${item.count} conversions</p>
+                            <p class="text-sm text-gray-500">${item.fonts}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="viewBatch(${item.batch_id})" class="text-blue-600 hover:text-blue-700 text-sm font-medium">View</button>
+                            <button onclick="deleteBatch(${item.batch_id})" class="text-red-500 hover:text-red-600 text-sm font-medium">Delete</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 渲染单条记录
+        function renderSingleList(history) {
+            var container = document.getElementById('single-list');
+            container.innerHTML = '';
+            
+            history.forEach(function(item) {
+                var date = new Date(item.created_at * 1000).toLocaleDateString();
+                var div = document.createElement('div');
+                div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <span class="text-xs font-semibold text-gray-400 uppercase">${item.font_style}</span>
+                        <p class="text-gray-700">${item.input_text}</p>
+                        <p class="text-blue-600">${item.output_text}</p>
+                        <p class="text-xs text-gray-400">${date}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="copyResult('${item.output_text}')" class="text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium">Copy</button>
+                        <button onclick="deleteSingle(${item.id})" class="text-red-500 hover:text-red-600 text-sm font-medium">Delete</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 过滤历史
+        function filterHistory(filter) {
+            currentFilter = filter;
+            document.getElementById('batch-list').innerHTML = '';
+            document.getElementById('single-list').innerHTML = '';
+            loadHistory();
+        }
+
+        // 查看批量详情
+        async function viewBatch(batchId) {
+            var records = await getBatchHistory(batchId);
+            alert('Batch #' + batchId + ': ' + records.length + ' records\n' + JSON.stringify(records.map(function(r) {
+                return r.input_text + ' → ' + r.font_style;
+            }), null, 2));
+        }
+
+        // 删除批量
+        async function deleteBatch(batchId) {
+            if (!confirm('Delete this batch?')) return;
+            await deleteHistory(null, batchId);
+            loadHistory();
+        }
+
+        // 删除单条
+        async function deleteSingle(id) {
+            if (!confirm('Delete this record?')) return;
+            await deleteHistory(id, null);
+            loadHistory();
+        }
+
+        // 复制结果
+        function copyResult(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Copied!');
+            });
+        }
+
+        // 显示空状态
+        function showEmptyState() {
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('batch-list').innerHTML = '';
+            document.getElementById('single-list').innerHTML = '';
+        }
+
+        // 页面加载完成后初始化
+        init();
+    </script>
+</body>
+</html>
