@@ -259,3 +259,44 @@ function showToast(msg) {
 // 确保 fontNames 在页面加载时可用
 if (typeof fontNames === 'undefined') {
 }
+
+// ========== FONT GRID INITIALIZATION ==========
+function initFontGrid() {
+    var grid = document.getElementById('font-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    
+    if (typeof fontNames === 'undefined' || !fontNames.length) {
+        console.error('fontNames not defined or empty');
+        grid.innerHTML = '<span class="text-red-500">Loading fonts...</span>';
+        return;
+    }
+    
+    fontNames.forEach(function(name) {
+        var btn = document.createElement('button');
+        btn.className = 'font-btn p-2 rounded-lg bg-gray-100 hover:bg-blue-100 text-sm font-medium text-gray-700 transition';
+        btn.textContent = name;
+        btn.dataset.font = name;
+        btn.onclick = function() { toggleFont(name, this); };
+        grid.appendChild(btn);
+    });
+}
+
+function toggleFont(name, btn) {
+    var selectedFonts = window.selectedFonts || [];
+    var idx = selectedFonts.indexOf(name);
+    if (idx >= 0) {
+        selectedFonts.splice(idx, 1);
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-gray-100');
+    } else {
+        selectedFonts.push(name);
+        btn.classList.remove('bg-gray-100');
+        btn.classList.add('bg-blue-600', 'text-white');
+    }
+    window.selectedFonts = selectedFonts;
+    
+    var countEl = document.getElementById('selected-count');
+    if (countEl) countEl.textContent = selectedFonts.length;
+}
