@@ -258,5 +258,4 @@ function showToast(msg) {
 // ========== INITIALIZATION ==========
 // 确保 fontNames 在页面加载时可用
 if (typeof fontNames === 'undefined') {
-    var fontNames = [];
 }
