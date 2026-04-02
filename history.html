@@ -9,22 +9,45 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
     <script src="auth.js"></script>
+    <style>
+        .history-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .history-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .font-sample {
+            font-size: 20px;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+        .batch-expand {
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; max-height: 0; }
+            to { opacity: 1; max-height: 2000px; }
+        }
+    </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
-    <header class="bg-white shadow-sm py-4 px-4">
+    <header class="bg-white shadow-sm py-4 px-4 sticky top-0 z-10">
         <div class="container mx-auto max-w-4xl flex items-center justify-between flex-wrap gap-3">
             <a href="index.html" class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                Font Generator Free
+                🔤 Font Generator Free
             </a>
             <div class="flex items-center gap-3">
-                <a href="index.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Generator</a>
-                <a href="pricing.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Pricing</a>
-                <span id="pro-badge" style="display:none;"></span>
-                <div id="auth-login-btn"></div>
-                <div id="auth-user-info" style="display:none;" class="flex items-center gap-2">
+                <a href="index.html" class="text-sm text-gray-600 hover:text-blue-600 font-medium">Generator</a>
+                <a href="combo.html" class="text-sm text-gray-600 hover:text-blue-600 font-medium">Combos</a>
+                <span id="pro-badge" class="hidden text-xs bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-1 rounded-full font-semibold"></span>
+                <div id="auth-login-btn">
+                    <button onclick="signIn()" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700">Sign In</button>
+                </div>
+                <div id="auth-user-info" class="hidden items-center gap-2">
                     <img id="auth-user-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full border-2 border-blue-200">
-                    <span id="auth-user-name" class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
+                    <span id="auth-user-name" class="text-sm font-medium text-gray-700 max-w-[100px] truncate hidden md:block"></span>
                     <button onclick="signOut()" class="text-xs text-gray-400 hover:text-red-500">Sign out</button>
                 </div>
             </div>
@@ -32,50 +55,131 @@
     </header>
 
     <main class="flex-grow container mx-auto px-4 max-w-4xl py-6">
+        <!-- 页面标题 -->
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">Your History</h1>
-            <div class="flex gap-2">
-                <button onclick="filterHistory('all')" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white">All</button>
-                <button onclick="filterHistory('batch')" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200">Batch</button>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">📜 Conversion History</h1>
+                <p class="text-sm text-gray-500 mt-1">Your font conversion records stored in the cloud</p>
+            </div>
+            <button onclick="loadHistory()" class="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-200 flex items-center gap-2">
+                🔄 Refresh
+            </button>
+        </div>
+
+        <!-- 筛选标签 -->
+        <div class="flex gap-2 mb-6">
+            <button onclick="filterHistory('all')" id="filter-all" class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white shadow-sm">
+                📋 All Records
+            </button>
+            <button onclick="filterHistory('single')" id="filter-single" class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 hover:bg-gray-100 shadow-sm border border-gray-200">
+                ✨ Single
+            </button>
+            <button onclick="filterHistory('batch')" id="filter-batch" class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 hover:bg-gray-100 shadow-sm border border-gray-200">
+                📦 Batch
+            </button>
+        </div>
+
+        <!-- Pro 升级提示 -->
+        <div id="pro-prompt" class="hidden bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white mb-6 text-center">
+            <div class="text-5xl mb-4">🔒</div>
+            <h2 class="text-2xl font-bold mb-2">Pro Feature</h2>
+            <p class="text-blue-100 mb-4 max-w-md mx-auto">Upgrade to Pro to unlock cloud history, save your favorite font combinations, and access batch conversion.</p>
+            <a href="pricing.html" class="inline-block bg-white text-blue-700 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition">
+                View Pro Plans →
+            </a>
+            <p class="text-xs text-blue-200 mt-4">No credit card required for Free trial</p>
+        </div>
+
+        <!-- 统计信息 -->
+        <div id="stats-bar" class="hidden bg-white rounded-xl p-4 mb-6 shadow-sm border border-gray-100">
+            <div class="flex justify-around text-center">
+                <div>
+                    <div class="text-2xl font-bold text-blue-600" id="stat-total">0</div>
+                    <div class="text-xs text-gray-500">Total Records</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-green-600" id="stat-batch">0</div>
+                    <div class="text-xs text-gray-500">Batch Jobs</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-purple-600" id="stat-single">0</div>
+                    <div class="text-xs text-gray-500">Single Conversions</div>
+                </div>
             </div>
         </div>
 
-        <!-- Pro 提示 -->
-        <div id="pro-prompt" class="hidden bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white mb-6">
-            <h2 class="text-xl font-bold mb-2">🔒 Pro Feature</h2>
-            <p class="mb-4">Upgrade to Pro to unlock cloud history, batch conversion, and more!</p>
-            <a href="pricing.html" class="inline-block bg-white text-blue-700 px-6 py-2 rounded-lg font-bold hover:bg-blue-50">View Plans</a>
+        <!-- 批量记录详情弹窗 -->
+        <div id="batch-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                    <h3 class="font-bold text-lg" id="modal-title">Batch Details</h3>
+                    <button onclick="closeBatchModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+                <div id="modal-content" class="p-4 overflow-y-auto max-h-[60vh]"></div>
+            </div>
         </div>
 
         <!-- 批量记录列表 -->
-        <div id="batch-list" class="space-y-4 mb-8"></div>
+        <div id="batch-list" class="space-y-4 mb-6"></div>
 
         <!-- 单条记录列表 -->
         <div id="single-list" class="space-y-3"></div>
 
         <!-- 空状态 -->
-        <div id="empty-state" class="hidden text-center py-12">
-            <div class="text-6xl mb-4">📝</div>
+        <div id="empty-state" class="hidden text-center py-16">
+            <div class="text-7xl mb-6">📭</div>
             <h3 class="text-xl font-bold text-gray-700 mb-2">No history yet</h3>
-            <p class="text-gray-500 mb-4">Start generating fonts to see your history here</p>
-            <a href="index.html" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">Go to Generator</a>
+            <p class="text-gray-500 mb-6 max-w-sm mx-auto">Start converting fonts to see your history here. All your conversions will be saved automatically.</p>
+            <a href="index.html" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
+                🎨 Start Converting
+            </a>
+        </div>
+
+        <!-- 未登录状态 -->
+        <div id="login-prompt" class="hidden text-center py-16">
+            <div class="text-7xl mb-6">🔐</div>
+            <h3 class="text-xl font-bold text-gray-700 mb-2">Sign in to view history</h3>
+            <p class="text-gray-500 mb-6 max-w-sm mx-auto">Connect with Google to access your cloud history from any device.</p>
+            <button onclick="signIn()" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
+                🔵 Sign in with Google
+            </button>
         </div>
 
         <!-- 加载中 -->
-        <div id="loading" class="text-center py-12">
-            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
-            <p class="text-gray-500 mt-4">Loading history...</p>
+        <div id="loading" class="text-center py-16">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4"></div>
+            <p class="text-gray-500">Loading your history...</p>
+        </div>
+
+        <!-- 分页 -->
+        <div id="pagination" class="hidden flex justify-center gap-2 mt-8">
+            <button onclick="loadMore(-1)" id="btn-prev" class="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50" disabled>
+                ← Previous
+            </button>
+            <span class="px-4 py-2 text-gray-500" id="page-info">Page 1</span>
+            <button onclick="loadMore(1)" id="btn-next" class="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50" disabled>
+                Next →
+            </button>
         </div>
     </main>
 
     <footer class="bg-white border-t border-gray-200 py-6 text-center text-gray-500 text-sm mt-auto">
-        <p>© <span id="year"></span> Font Generator Free. All rights reserved.</p>
+        <p>© <span id="year"></span> Font Generator Free • <a href="pricing.html" class="text-blue-600 hover:underline">Upgrade to Pro</a></p>
     </footer>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg opacity-0 transition-opacity duration-300 z-50 pointer-events-none">
+        <span id="toast-text">Done!</span>
+    </div>
 
     <script src="membership.js"></script>
     <script>
         var currentFilter = 'all';
+        var currentPage = 1;
+        var pageSize = 20;
+        var totalRecords = 0;
         var loadedHistory = [];
+        var batchDetails = {};
 
         // 初始化
         document.getElementById('year').textContent = new Date().getFullYear();
@@ -83,42 +187,92 @@
         // 检查登录并加载历史
         async function init() {
             await waitForAuth();
-            
-            if (!window.membershipStatus || !window.membershipStatus.isPro) {
-                document.getElementById('pro-prompt').classList.remove('hidden');
-            }
-            
             await loadHistory();
         }
 
         // 等待认证
         function waitForAuth() {
             return new Promise(resolve => {
-                if (window.googleUser) {
-                    syncUserToBackend(window.googleUser, window.idToken).then(() => resolve());
-                } else {
-                    // 检查 sessionStorage
-                    var session = fg_loadSession();
-                    if (session) {
-                        syncUserToBackend(session.user, session.idToken).then(() => resolve());
-                    } else {
-                        // 未登录
-                        document.getElementById('pro-prompt').classList.remove('hidden');
-                        document.getElementById('loading').classList.add('hidden');
-                        showEmptyState();
-                        resolve();
+                var checkAuth = setInterval(() => {
+                    if (window.googleUser || fg_loadSession()) {
+                        clearInterval(checkAuth);
+                        var user = window.googleUser || fg_loadSession();
+                        if (user) {
+                            syncUserToBackend(user.user || user.profileObj, user.idToken || user.token).then(() => {
+                                updateUserUI(user);
+                                resolve();
+                            });
+                        } else {
+                            showLoginPrompt();
+                            resolve();
+                        }
                     }
-                }
+                }, 100);
+                
+                // 超时处理
+                setTimeout(() => {
+                    clearInterval(checkAuth);
+                    showLoginPrompt();
+                    resolve();
+                }, 3000);
             });
+        }
+
+        // 更新用户 UI
+        function updateUserUI(user) {
+            var userInfo = document.getElementById('auth-user-info');
+            var loginBtn = document.getElementById('auth-login-btn');
+            var avatar = document.getElementById('auth-user-avatar');
+            var name = document.getElementById('auth-user-name');
+            
+            if (user.profileObj || user.user) {
+                var profile = user.profileObj || user.user;
+                avatar.src = profile.imageUrl || profile.picture;
+                name.textContent = profile.name || profile.email;
+                userInfo.classList.remove('hidden');
+                userInfo.classList.add('flex');
+                loginBtn.classList.add('hidden');
+            }
+        }
+
+        // 显示登录提示
+        function showLoginPrompt() {
+            document.getElementById('login-prompt').classList.remove('hidden');
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('stats-bar').classList.add('hidden');
         }
 
         // 加载历史记录
         async function loadHistory() {
             document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('batch-list').innerHTML = '';
+            document.getElementById('single-list').innerHTML = '';
             
             try {
-                var history = await getHistoryList(100, 0, currentFilter === 'batch');
+                // 检查 Pro 状态
+                if (!window.membershipStatus || !window.membershipStatus.isPro) {
+                    document.getElementById('pro-prompt').classList.remove('hidden');
+                    document.getElementById('stats-bar').classList.add('hidden');
+                    document.getElementById('loading').classList.add('hidden');
+                    return;
+                }
+                
+                document.getElementById('pro-prompt').classList.add('hidden');
+                document.getElementById('stats-bar').classList.remove('hidden');
+                
+                // 获取历史
+                var history = await getHistoryList(pageSize, (currentPage - 1) * pageSize);
                 loadedHistory = history;
+                
+                // 分类统计
+                var singles = history.filter(h => !h.batch_id);
+                var batches = history.filter(h => h.batch_id);
+                var uniqueBatches = [...new Set(batches.map(b => b.batch_id))];
+                
+                document.getElementById('stat-total').textContent = history.length;
+                document.getElementById('stat-single').textContent = singles.length;
+                document.getElementById('stat-batch').textContent = uniqueBatches.length;
                 
                 if (history.length === 0) {
                     showEmptyState();
@@ -128,6 +282,7 @@
             } catch (error) {
                 console.error('Load history error:', error);
                 showEmptyState();
+                showToast('Failed to load history');
             }
             
             document.getElementById('loading').classList.add('hidden');
@@ -137,98 +292,174 @@
         function renderHistory(history) {
             document.getElementById('empty-state').classList.add('hidden');
             
-            if (currentFilter === 'batch') {
-                renderBatchList(history);
-            } else {
-                renderSingleList(history);
+            // 按 batch_id 分组
+            var batchGroups = {};
+            var singles = [];
+            
+            history.forEach(function(item) {
+                if (item.batch_id) {
+                    if (!batchGroups[item.batch_id]) {
+                        batchGroups[item.batch_id] = [];
+                    }
+                    batchGroups[item.batch_id].push(item);
+                } else {
+                    singles.push(item);
+                }
+            });
+            
+            // 渲染批量记录
+            var batchContainer = document.getElementById('batch-list');
+            var singleContainer = document.getElementById('single-list');
+            batchContainer.innerHTML = '';
+            singleContainer.innerHTML = '';
+            
+            // 批量记录
+            if (currentFilter === 'all' || currentFilter === 'batch') {
+                Object.keys(batchGroups).sort((a, b) => b - a).forEach(function(batchId) {
+                    var items = batchGroups[batchId];
+                    var first = items[0];
+                    var batchDiv = document.createElement('div');
+                    batchDiv.className = 'history-card bg-white p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer';
+                    batchDiv.onclick = function() { viewBatch(batchId); };
+                    batchDiv.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-purple-100 text-purple-700 text-xs font-semibold px-2 py-1 rounded">📦 BATCH</span>
+                                    <span class="text-xs text-gray-400">#${batchId}</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">${items.length} conversions • ${first.fonts || 'Multiple fonts'}</p>
+                                <p class="text-xs text-gray-400">${formatDate(first.created_at)}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="event.stopPropagation(); copyBatch(${batchId})" class="text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100">📋 Copy All</button>
+                                <button onclick="event.stopPropagation(); deleteBatch(${batchId})" class="text-red-500 hover:text-red-600 text-sm">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            ${items.slice(0, 3).map(item => '<span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">' + truncate(item.input_text, 20) + '</span>').join('')}
+                            ${items.length > 3 ? '<span class="text-xs text-gray-400">+' + (items.length - 3) + ' more</span>' : ''}
+                        </div>
+                    `;
+                    batchContainer.appendChild(batchDiv);
+                });
             }
-        }
-
-        // 渲染批量记录
-        function renderBatchList(history) {
-            var container = document.getElementById('batch-list');
-            container.innerHTML = '';
             
-            history.forEach(function(item) {
-                var div = document.createElement('div');
-                div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100';
-                div.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <span class="text-xs font-semibold text-gray-400 uppercase">Batch #${item.batch_id}</span>
-                            <p class="text-gray-700 font-medium">${item.count} conversions</p>
-                            <p class="text-sm text-gray-500">${item.fonts}</p>
+            // 单条记录
+            if (currentFilter === 'all' || currentFilter === 'single') {
+                singles.forEach(function(item) {
+                    var singleDiv = document.createElement('div');
+                    singleDiv.className = 'history-card bg-white p-4 rounded-xl shadow-sm border border-gray-100';
+                    singleDiv.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded">${item.font_style || 'Font'}</span>
+                                    <span class="text-xs text-gray-400">${formatDate(item.created_at)}</span>
+                                </div>
+                                <p class="text-gray-500 text-sm line-through mb-1">${escapeHtml(truncate(item.input_text, 50))}</p>
+                                <p class="font-sample text-blue-600">${escapeHtml(item.output_text || item.converted_text)}</p>
+                            </div>
+                            <div class="flex gap-2 ml-4">
+                                <button onclick="copyResult('${escapeHtml(item.output_text || item.converted_text)}')" class="text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100">📋 Copy</button>
+                                <button onclick="deleteSingle(${item.id})" class="text-red-500 hover:text-red-600 text-sm">🗑️</button>
+                            </div>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="viewBatch(${item.batch_id})" class="text-blue-600 hover:text-blue-700 text-sm font-medium">View</button>
-                            <button onclick="deleteBatch(${item.batch_id})" class="text-red-500 hover:text-red-600 text-sm font-medium">Delete</button>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        // 渲染单条记录
-        function renderSingleList(history) {
-            var container = document.getElementById('single-list');
-            container.innerHTML = '';
-            
-            history.forEach(function(item) {
-                var date = new Date(item.created_at * 1000).toLocaleDateString();
-                var div = document.createElement('div');
-                div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center';
-                div.innerHTML = `
-                    <div>
-                        <span class="text-xs font-semibold text-gray-400 uppercase">${item.font_style}</span>
-                        <p class="text-gray-700">${item.input_text}</p>
-                        <p class="text-blue-600">${item.output_text}</p>
-                        <p class="text-xs text-gray-400">${date}</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="copyResult('${item.output_text}')" class="text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium">Copy</button>
-                        <button onclick="deleteSingle(${item.id})" class="text-red-500 hover:text-red-600 text-sm font-medium">Delete</button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+                    `;
+                    singleContainer.appendChild(singleDiv);
+                });
+            }
         }
 
         // 过滤历史
         function filterHistory(filter) {
             currentFilter = filter;
-            document.getElementById('batch-list').innerHTML = '';
-            document.getElementById('single-list').innerHTML = '';
+            currentPage = 1;
+            
+            // 更新按钮样式
+            ['all', 'single', 'batch'].forEach(f => {
+                var btn = document.getElementById('filter-' + f);
+                if (f === filter) {
+                    btn.className = 'px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white shadow-sm';
+                } else {
+                    btn.className = 'px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 hover:bg-gray-100 shadow-sm border border-gray-200';
+                }
+            });
+            
             loadHistory();
         }
 
         // 查看批量详情
         async function viewBatch(batchId) {
+            var modal = document.getElementById('batch-modal');
+            var content = document.getElementById('modal-content');
+            var title = document.getElementById('modal-title');
+            
+            title.textContent = '📦 Batch #' + batchId;
+            content.innerHTML = '<div class="text-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto"></div></div>';
+            modal.classList.remove('hidden');
+            
+            try {
+                var records = await getBatchHistory(batchId);
+                var html = '<div class="space-y-3 batch-expand">';
+                records.forEach(function(r, i) {
+                    html += `
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-semibold text-gray-500">#${i + 1} • ${r.font_style}</span>
+                                <button onclick="copyResult('${escapeHtml(r.output_text || r.converted_text)}')" class="text-xs text-blue-600 hover:text-blue-700">Copy</button>
+                            </div>
+                            <p class="text-gray-400 text-sm line-through">${escapeHtml(truncate(r.input_text, 40))}</p>
+                            <p class="font-sample text-blue-600 mt-1">${escapeHtml(r.output_text || r.converted_text)}</p>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                content.innerHTML = html;
+            } catch (error) {
+                content.innerHTML = '<p class="text-red-500 text-center py-4">Failed to load batch details</p>';
+            }
+        }
+
+        // 关闭批量弹窗
+        function closeBatchModal() {
+            document.getElementById('batch-modal').classList.add('hidden');
+        }
+
+        // 复制批量
+        async function copyBatch(batchId) {
             var records = await getBatchHistory(batchId);
-            alert('Batch #' + batchId + ': ' + records.length + ' records\n' + JSON.stringify(records.map(function(r) {
-                return r.input_text + ' → ' + r.font_style;
-            }), null, 2));
+            var text = records.map(r => r.output_text || r.converted_text).join('\n');
+            navigator.clipboard.writeText(text).then(() => showToast('Copied ' + records.length + ' items!'));
         }
 
         // 删除批量
         async function deleteBatch(batchId) {
-            if (!confirm('Delete this batch?')) return;
-            await deleteHistory(null, batchId);
-            loadHistory();
+            if (!confirm('Delete this batch? This cannot be undone.')) return;
+            try {
+                await deleteHistory(null, batchId);
+                showToast('Batch deleted');
+                loadHistory();
+            } catch (e) {
+                showToast('Delete failed');
+            }
         }
 
         // 删除单条
         async function deleteSingle(id) {
             if (!confirm('Delete this record?')) return;
-            await deleteHistory(id, null);
-            loadHistory();
+            try {
+                await deleteHistory(id, null);
+                showToast('Deleted');
+                loadHistory();
+            } catch (e) {
+                showToast('Delete failed');
+            }
         }
 
         // 复制结果
         function copyResult(text) {
-            navigator.clipboard.writeText(text).then(function() {
-                alert('Copied!');
-            });
+            navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
         }
 
         // 显示空状态
@@ -236,6 +467,38 @@
             document.getElementById('empty-state').classList.remove('hidden');
             document.getElementById('batch-list').innerHTML = '';
             document.getElementById('single-list').innerHTML = '';
+        }
+
+        // 工具函数
+        function formatDate(timestamp) {
+            if (!timestamp) return '';
+            var d = new Date(timestamp * 1000);
+            return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        function truncate(str, len) {
+            if (!str) return '';
+            return str.length > len ? str.substring(0, len) + '...' : str;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(msg) {
+            var toast = document.getElementById('toast');
+            document.getElementById('toast-text').textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 2000);
+        }
+
+        // 加载更多
+        function loadMore(direction) {
+            currentPage += direction;
+            loadHistory();
         }
 
         // 页面加载完成后初始化
