@@ -262,25 +262,45 @@ if (typeof fontNames === 'undefined') {
 
 // ========== FONT GRID INITIALIZATION ==========
 function initFontGrid() {
+    // 填充主 font-grid（Single 模式）
     var grid = document.getElementById('font-grid');
-    if (!grid) return;
-    
-    grid.innerHTML = '';
-    
-    if (typeof fontNames === 'undefined' || !fontNames.length) {
-        console.error('fontNames not defined or empty');
-        grid.innerHTML = '<span class="text-red-500">Loading fonts...</span>';
-        return;
+    if (grid) {
+        grid.innerHTML = '';
+        
+        if (typeof fontNames === 'undefined' || !fontNames.length) {
+            console.error('fontNames not defined or empty');
+            grid.innerHTML = '<span class="text-red-500">Loading fonts...</span>';
+        } else {
+            fontNames.forEach(function(name) {
+                var btn = document.createElement('button');
+                btn.className = 'font-btn p-2 rounded-lg bg-gray-100 hover:bg-blue-100 text-sm font-medium text-gray-700 transition';
+                btn.textContent = name;
+                btn.dataset.font = name;
+                btn.onclick = function() { toggleFont(name, this); };
+                grid.appendChild(btn);
+            });
+        }
     }
     
-    fontNames.forEach(function(name) {
-        var btn = document.createElement('button');
-        btn.className = 'font-btn p-2 rounded-lg bg-gray-100 hover:bg-blue-100 text-sm font-medium text-gray-700 transition';
-        btn.textContent = name;
-        btn.dataset.font = name;
-        btn.onclick = function() { toggleFont(name, this); };
-        grid.appendChild(btn);
-    });
+    // 填充 batch-font-grid（Batch 模式）
+    var batchGrid = document.getElementById('batch-font-grid');
+    if (batchGrid) {
+        batchGrid.innerHTML = '';
+        
+        if (typeof fontNames === 'undefined' || !fontNames.length) {
+            console.error('fontNames not defined or empty');
+            batchGrid.innerHTML = '<span class="text-red-500">Loading...</span>';
+        } else {
+            fontNames.forEach(function(name) {
+                var btn = document.createElement('button');
+                btn.className = 'font-btn p-2 rounded-lg bg-gray-100 hover:bg-blue-100 text-sm font-medium text-gray-700 transition';
+                btn.textContent = name;
+                btn.dataset.font = name;
+                btn.onclick = function() { toggleFont(name, this); };
+                batchGrid.appendChild(btn);
+            });
+        }
+    }
 }
 
 function toggleFont(name, btn) {
@@ -301,60 +321,7 @@ function toggleFont(name, btn) {
     if (countEl) countEl.textContent = selectedFonts.length;
 }
 
-// ========== SINGLE INPUT HANDLER ==========
-function onSingleInput() {
-    var input = document.getElementById('input-single');
-    if (!input) return;
-    
-    var text = input.value;
-    if (!text.trim()) {
-        document.getElementById('results-single').innerHTML = '';
-        return;
-    }
-    
-    // 调用 generateFonts 函数
-    var results = generateFonts(text);
-    
-    // 显示结果
-    var container = document.getElementById('results-single');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    results.forEach(function(result) {
-        var card = document.createElement("div");
-        card.className = "bg-gray-50 p-3 rounded-lg";
-        card.style.height = "80px";
-        card.style.overflow = "hidden";
-        card.className = "bg-gray-50 p-3 rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2";
-        
-        var fontName = document.createElement('div');
-        fontName.className = 'text-xs text-gray-500 font-medium';
-        fontName.textContent = result.name;
-        
-        var text = document.createElement("div");
-        text.className = "text-lg font-semibold text-blue-600 break-all";
-        text.style.maxHeight = "60px";
-        text.style.overflow = "hidden";
-        text.className = 'text-lg font-semibold text-blue-600';
-        text.textContent = result.text;
-        
-        var btn = document.createElement('button');
-        btn.className = 'text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100';
-        btn.textContent = '📋 Copy';
-        btn.onclick = function() {
-            navigator.clipboard.writeText(result.text);
-            btn.textContent = '✅';
-            setTimeout(function() { btn.textContent = '📋 Copy'; }, 1500);
-        };
-        
-        card.appendChild(leftDiv);
-        card.appendChild(btn);
-        container.appendChild(card);
-    });
-}
-
-// ========== SINGLE INPUT HANDLER ==========
+// ========== SINGLE INPUT HANDLER ==========// ========== SINGLE INPUT HANDLER ==========
 function onSingleInput() {
     var input = document.getElementById('input-single');
     if (!input) return;
