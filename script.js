@@ -353,3 +353,54 @@ function onSingleInput() {
         container.appendChild(card);
     });
 }
+
+// ========== SINGLE INPUT HANDLER ==========
+function onSingleInput() {
+    var input = document.getElementById('input-single');
+    if (!input) return;
+    
+    var text = input.value;
+    if (!text.trim()) {
+        document.getElementById('results-single').innerHTML = '';
+        return;
+    }
+    
+    var results = generateFonts(text);
+    
+    var container = document.getElementById('results-single');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    results.forEach(function(result) {
+        var card = document.createElement('div');
+        card.className = 'bg-gray-50 p-3 rounded-lg flex justify-between items-center gap-2';
+        
+        var infoDiv = document.createElement('div');
+        infoDiv.className = 'flex-1 min-w-0';
+        
+        var fontName = document.createElement('div');
+        fontName.className = 'text-xs text-gray-500 font-medium';
+        fontName.textContent = result.name;
+        
+        var text = document.createElement('div');
+        text.className = 'text-lg font-semibold text-blue-600 truncate';
+        text.textContent = result.text;
+        
+        infoDiv.appendChild(fontName);
+        infoDiv.appendChild(text);
+        
+        var btn = document.createElement('button');
+        btn.className = 'text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100 whitespace-nowrap';
+        btn.textContent = '📋 Copy';
+        btn.onclick = function() {
+            navigator.clipboard.writeText(result.text);
+            btn.textContent = '✅';
+            setTimeout(function() { btn.textContent = '📋 Copy'; }, 1500);
+        };
+        
+        card.appendChild(infoDiv);
+        card.appendChild(btn);
+        container.appendChild(card);
+    });
+}
