@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Font Generator Preview - From CDN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #f8fafc; }
+        .font-sample { font-size: 24px; }
+        .test-result { padding: 12px; margin: 8px 0; border-radius: 8px; }
+        .pass { background: #d1fae5; border: 1px solid #10b981; }
+        .fail { background: #fee2e2; border: 1px solid #ef4444; }
+        .info { background: #e0f2fe; border: 1px solid #3b82f6; }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-2">🔤 Font Generator Preview</h1>
+        <p class="text-center text-gray-500 mb-8">Testing latest code from jsDelivr CDN</p>
+        
+        <div id="status" class="test-result info">
+            <strong>⏳ Loading scripts...</strong>
+            <p id="status-detail">Please wait...</p>
+        </div>
+        
+        <div id="tests" class="hidden">
+            <h2 class="text-xl font-bold mt-8 mb-4">📊 Test Results</h2>
+            <div id="test-results"></div>
+        </div>
+        
+        <div id="manual-test" class="mt-8">
+            <h2 class="text-xl font-bold mb-4">🧪 Manual Test</h2>
+            <input type="text" id="testInput" value="𝐀𝐁𝐂" placeholder="输入测试文本" 
+                   class="w-full p-4 text-xl border-2 rounded-xl mb-4">
+            <select id="testFont" class="w-full p-3 border-2 rounded-xl mb-4">
+                <option value="Bold">Bold (𝐀𝐁𝐂)</option>
+                <option value="Italic">Italic (𝐴𝐵𝐶)</option>
+                <option value="Gothic">Gothic (𝔄𝔅ℭ)</option>
+                <option value="Bubble">Bubble (ⒶⒷⒸ)</option>
+                <option value="Black Bubble">Black Bubble (🅐🅑🅒)</option>
+            </select>
+            <button onclick="runManualTest()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-700">
+                🔄 Convert & Test
+            </button>
+            <div id="manual-result" class="mt-4 text-center">
+                <div class="text-gray-500 text-sm mb-2">Normalized:</div>
+                <div id="normalized" class="text-xl mb-4">-</div>
+                <div class="text-gray-500 text-sm mb-2">Converted:</div>
+                <div id="converted" class="text-3xl font-bold text-blue-600">-</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/hebiwu007/font-generator-free@main/script.js"></script>
+    <script>
+        var allPassed = true;
+        var results = [];
+        
+        function addResult(name, pass, detail) {
+            var div = document.createElement('div');
+            div.className = 'test-result ' + (pass ? 'pass' : 'fail');
+            div.innerHTML = '<strong>' + (pass ? '✅' : '❌') + ' ' + name + '</strong>';
+            if (detail) {
+                div.innerHTML += '<div class="text-sm mt-1">' + detail + '</div>';
+            }
+            document.getElementById('test-results').appendChild(div);
+            if (!pass) allPassed = false;
+        }
+        
+        function runTests() {
+            document.getElementById('tests').classList.remove('hidden');
+            
+            // Test 1: normalizeText exists
+            addResult('normalizeText function', typeof normalizeText === 'function', 
+                'Type: ' + typeof normalizeText);
+            
+            // Test 2: convertText exists
+            addResult('convertText function', typeof convertText === 'function',
+                'Type: ' + typeof convertText);
+            
+            // Test 3: fontDictionaries exists
+            addResult('fontDictionaries exists', typeof fontDictionaries !== 'undefined' && Array.isArray(fontDictionaries),
+                'Fonts: ' + (typeof fontDictionaries !== 'undefined' ? fontDictionaries.length : 0));
+            
+            // Test 4: Normalize Bold text
+            var boldText = '𝐀𝐁𝐂';
+            var normalized = normalizeText(boldText);
+            addResult('Normalize Bold text', normalized === 'ABC',
+                'Input: ' + boldText + ' → Output: ' + normalized);
+            
+            // Test 5: Normalize Black Bubble
+            var bbText = '🅐🅑🅒';
+            var normalizedBB = normalizeText(bbText);
+            addResult('Normalize Black Bubble', normalizedBB === 'ABC',
+                'Input: ' + bbText + ' → Output: ' + normalizedBB);
+            
+            // Test 6: Cross-font conversion
+            var gothicInput = '𝔄𝔅ℭ';
+            var convertedToBold = convertText(gothicInput, 'Bold');
+            addResult('Cross-font: Gothic → Bold', convertedToBold.includes('A') || convertedToBold.includes('B'),
+                'Input: ' + gothicInput + ' → Bold: ' + convertedToBold);
+            
+            // Test 7: generateFonts exists
+            addResult('generateFonts function', typeof generateFonts === 'function',
+                'Type: ' + typeof generateFonts);
+            
+            // Update status
+            var statusDiv = document.getElementById('status');
+            var statusDetail = document.getElementById('status-detail');
+            if (allPassed) {
+                statusDiv.className = 'test-result pass';
+                statusDiv.innerHTML = '<strong>✅ All Core Tests Passed!</strong><p>Font conversion system is working.</p>';
+            } else {
+                statusDiv.className = 'test-result fail';
+                statusDiv.innerHTML = '<strong>❌ Some Tests Failed</strong><p>Check the results below.</p>';
+            }
+        }
+        
+        function runManualTest() {
+            var input = document.getElementById('testInput').value;
+            var font = document.getElementById('testFont').value;
+            
+            var normalized = normalizeText ? normalizeText(input) : 'Function not found';
+            var converted = convertText ? convertText(input, font) : 'Function not found';
+            
+            document.getElementById('normalized').textContent = normalized;
+            document.getElementById('converted').textContent = converted;
+        }
+        
+        // Run tests after scripts load
+        setTimeout(runTests, 500);
+    </script>
+</body>
+</html>
