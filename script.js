@@ -46,7 +46,7 @@ const fontDictionaries = [
     { name: "Monospace", map: makeMap(0x1D670, 0x1D670, 0x1D7F6) },
     { name: "Bold Cursive", map: genBoldItalic() },
     { name: "Bubble", map: makeMap(0x24D0, 0x24B6, 0x245F) },
-    { name: "Black Bubble", map: makeMap(0x1F170, 0x1F170, 0x245F) },
+    { name: "Black Bubble", map: makeMap(0x1F180, 0x1F150, 0x1F1A6) },
     { name: "Square", map: makeMap(0x1F130, 0x1F130, 0) },
     { name: "Black Square", map: makeMap(0x1F171, 0x1F171, 0) },
     { name: "Wide", map: Array.from("ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９") },
