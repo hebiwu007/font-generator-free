@@ -71,6 +71,9 @@ const fontDictionaries = [
 // 字体名称数组
 const fontNames = fontDictionaries.map(f => f.name);
 
+// 全局反向映射表：特殊字符 → 基础字符
+const reverseCharMap = new Map();
+
 // 预处理映射表
 fontDictionaries.forEach(font => {
     font.charMap = new Map();
@@ -87,13 +90,48 @@ fontDictionaries.forEach(font => {
             // 普通字体：直接映射
             font.charMap.set(char, mapArr[index]);
         }
+        // 构建反向映射（特殊字符 → 基础字符）
+        const specialChar = font.charMap.get(char);
+        if (specialChar && char !== specialChar) {
+            reverseCharMap.set(specialChar, char);
+        }
     });
 });
 
-// 核心转换算法
+// 清理特殊修饰符（如 Zalgo、Strikethrough 的组合字符）
+function cleanSpecialChars(char) {
+    // 移除 combining marks (U+0300 - U+036F)
+    return char.replace(/[\u0300-\u036F\u0483-\u0489\u1AB0-\u1ABE\u1DC0-\u1DFF]/g, '');
+}
+
+// 将特殊字体文本还原为基础字符
+function normalizeText(inputText) {
+    if (!inputText) return '';
+    const inputChars = Array.from(inputText);
+    return inputChars.map(char => {
+        // 先清理组合字符
+        const cleaned = cleanSpecialChars(char);
+        // 尝试直接匹配
+        if (reverseCharMap.has(cleaned)) {
+            return reverseCharMap.get(cleaned);
+        }
+        // 如果是基础字符，直接返回
+        if (baseChars.includes(char)) {
+            return char;
+        }
+        // 无法识别的字符保留原样
+        return char;
+    }).join('');
+}
+
+// 核心转换算法（支持跨字体转换）
 function generateFonts(inputText) {
     if (!inputText) return [];
-    const inputChars = Array.from(inputText);
+    
+    // 步骤1：还原输入文本（识别任意字体 → 普通字符）
+    const normalizedText = normalizeText(inputText);
+    const inputChars = Array.from(normalizedText);
+    
     return fontDictionaries.map(font => {
         const transformedText = inputChars.map(char => {
             return font.charMap.get(char) || char;
@@ -102,12 +140,16 @@ function generateFonts(inputText) {
     });
 }
 
-// 单个文本转换为单个字体
+// 单个文本转换为单个字体（自动识别输入字体并转换）
 function convertText(text, fontName) {
     const font = fontDictionaries.find(f => f.name === fontName);
     if (!font) return text;
     
-    const inputChars = Array.from(text);
+    // 步骤1：还原输入文本（识别任意字体 → 普通字符）
+    const normalizedText = normalizeText(text);
+    
+    // 步骤2：转换为目标字体
+    const inputChars = Array.from(normalizedText);
     const result = inputChars.map(char => {
         return font.charMap.get(char) || char;
     }).join('');
