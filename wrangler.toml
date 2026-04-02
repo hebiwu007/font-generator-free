@@ -1,4 +1,4 @@
-name = "font-generator-api"
+name = "font-generator-free"
 main = "worker/index.js"
 compatibility_date = "2024-03-01"
 account_id = "e8ae2227899374d7efc0b60bbf39ada9"
