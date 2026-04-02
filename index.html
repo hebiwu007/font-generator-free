@@ -150,19 +150,6 @@ function normalizeText(inputText) {
 }
 
 // 核心转换算法（支持跨字体转换）
-function generateFonts(inputText) {
-    if (!inputText) return [];
-    
-    // 步骤1：还原输入文本（识别任意字体 → 普通字符）
-    const normalizedText = normalizeText(inputText);
-    const inputChars = Array.from(normalizedText);
-    
-    return fontDictionaries.map(font => {
-        const transformedText = inputChars.map(char => {
-            return font.charMap.get(char) || char;
-        }).join('');
-        return { name: font.name, text: transformedText };
-    });
 }
 
 // 单个文本转换为单个字体（自动识别输入字体并转换）
