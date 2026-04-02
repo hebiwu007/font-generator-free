@@ -199,3 +199,49 @@ window.copyToClipboard = function(text, btn) {
         }
     });
 };
+
+// 调试：测试跨字体转换
+window.testConversion = function() {
+    var tests = [
+        { input: '𝐀𝐁𝐂', font: 'Bold' },
+        { input: '𝐴𝐵𝐶', font: 'Bold' },
+        { input: '𝔄𝔅ℭ', font: 'Bold' },
+        { input: 'ⒶⒷⒸ', font: 'Bold' },
+        { input: '🅐🅑🅒', font: 'Bold' },
+        { input: '𝗔𝗕𝗖', font: 'Bold' },
+    ];
+    
+    var results = [];
+    tests.forEach(function(t) {
+        var normalized = normalizeText(t.input);
+        var converted = convertText(t.input, t.font);
+        results.push({
+            input: t.input,
+            font: t.font,
+            normalized: normalized,
+            converted: converted
+        });
+    });
+    
+    console.table(results);
+    return results;
+};
+
+// 输出映射表到控制台
+window.dumpMaps = function() {
+    console.log('=== 映射表诊断 ===');
+    fontDictionaries.forEach(function(font) {
+        console.log('\\n' + font.name + ':');
+        var samples = baseChars.slice(0, 5).map(function(c, i) {
+            var mapped = font.charMap.get(c);
+            return c + ' -> ' + mapped + ' (U+' + mapped.codePointAt(0).toString(16).toUpperCase() + ')';
+        });
+        console.log(samples.join(', '));
+    });
+    
+    console.log('\\n=== 反向映射表示例 ===');
+    var entries = Array.from(reverseCharMap.entries()).slice(0, 10);
+    entries.forEach(function(e) {
+        console.log(e[0] + ' (U+' + e[0].codePointAt(0).toString(16).toUpperCase() + ') -> ' + e[1]);
+    });
+};
