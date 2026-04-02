@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Font Map Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 8px; }
+        .result { color: blue; font-size: 20px; }
+        .expected { color: green; }
+        input, button { padding: 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Font Conversion Test</h1>
+    
+    <h2>测试跨字体转换</h2>
+    <div id="tests"></div>
+    
+    <h2>手动测试</h2>
+    <input type="text" id="testInput" placeholder="输入文本" value="𝐀𝐁𝐂">
+    <select id="testFont">
+        <option value="Bold">Bold</option>
+        <option value="Italic">Italic</option>
+        <option value="Double Struck">Double Struck</option>
+        <option value="Gothic">Gothic</option>
+        <option value="Bubble">Bubble</option>
+        <option value="Black Bubble">Black Bubble</option>
+    </select>
+    <button onclick="runTest()">转换</button>
+    <div id="result" class="result"></div>
+
+    <script src="script.js"></script>
+    <script>
+        // 运行测试
+        function runAllTests() {
+            var tests = [
+                { input: 'ABC', font: 'Bold', desc: '正常 -> Bold' },
+                { input: '𝐀𝐁𝐂', font: 'Bold', desc: 'Bold -> Bold' },
+                { input: '𝐀𝐁𝐂', font: 'Italic', desc: 'Bold -> Italic' },
+                { input: '𝐀𝐁𝐂', font: 'Gothic', desc: 'Bold -> Gothic' },
+                { input: '𝔄𝔅ℭ', font: 'Bold', desc: 'Gothic -> Bold' },
+                { input: '𝔄𝔅ℭ', font: 'Bubble', desc: 'Gothic -> Bubble' },
+                { input: 'ⒶⒷⒸ', font: 'Bold', desc: 'Bubble -> Bold' },
+                { input: '🅐🅑🅒', font: 'Bold', desc: 'Black Bubble -> Bold' },
+                { input: '𝗔𝗕𝗖', font: 'Bold', desc: 'SansSerif Bold -> Bold' },
+            ];
+            
+            var html = '';
+            tests.forEach(function(t) {
+                var normalized = normalizeText(t.input);
+                var converted = convertText(t.input, t.font);
+                html += '<div class="test">';
+                html += '<strong>' + t.desc + '</strong><br>';
+                html += '输入: <span class="result">' + t.input + '</span><br>';
+                html += '还原: ' + normalized + '<br>';
+                html += '结果: <span class="result">' + converted + '</span>';
+                html += '</div>';
+            });
+            document.getElementById('tests').innerHTML = html;
+        }
+        
+        function runTest() {
+            var input = document.getElementById('testInput').value;
+            var font = document.getElementById('testFont').value;
+            var normalized = normalizeText(input);
+            var converted = convertText(input, font);
+            document.getElementById('result').innerHTML = 
+                '还原: ' + normalized + '<br>' +
+                '转为 ' + font + ': <span class="result">' + converted + '</span>';
+        }
+        
+        // 页面加载后自动运行测试
+        runAllTests();
+        
+        // 输出诊断信息
+        console.log('=== Font Map Test Loaded ===');
+        console.log('可用测试函数:');
+        console.log('  testConversion() - 测试跨字体转换');
+        console.log('  dumpMaps() - 输出映射表');
+    </script>
+</body>
+</html>
