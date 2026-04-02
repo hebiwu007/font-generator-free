@@ -199,3 +199,64 @@ window.copyToClipboard = function(text, btn) {
         }
     });
 };
+
+// ========== MODE SWITCHING (从 index.html 移出) ==========
+function switchMode(mode) {
+    currentMode = mode;
+    
+    var singleTab = document.getElementById('tab-single');
+    var batchTab = document.getElementById('tab-batch');
+    
+    if (mode === 'single') {
+        singleTab.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+        singleTab.classList.remove('text-gray-600');
+        batchTab.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+        batchTab.classList.add('text-gray-600');
+        document.getElementById('section-single').classList.remove('hidden');
+        document.getElementById('section-batch').classList.add('hidden');
+    } else {
+        batchTab.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+        batchTab.classList.remove('text-gray-600');
+        singleTab.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+        singleTab.classList.add('text-gray-600');
+        document.getElementById('section-batch').classList.remove('hidden');
+        document.getElementById('section-single').classList.add('hidden');
+    }
+}
+
+// ========== COPY TO CLIPBOARD ==========
+function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(function() {
+        if (btn) {
+            var originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.classList.add('bg-green-100', 'text-green-700');
+            setTimeout(function() {
+                btn.textContent = originalText;
+                btn.classList.remove('bg-green-100', 'text-green-700');
+            }, 1500);
+        }
+    });
+}
+
+// ========== SHOW TOAST ==========
+function showToast(msg) {
+    var toast = document.getElementById('toast');
+    var toastText = document.getElementById('toastText');
+    if (toast && toastText) {
+        toastText.textContent = msg;
+        toast.classList.add('opacity-100');
+        toast.classList.remove('opacity-0', 'pointer-events-none');
+        clearTimeout(window._toastTimer);
+        window._toastTimer = setTimeout(function() {
+            toast.classList.remove('opacity-100');
+            toast.classList.add('opacity-0', 'pointer-events-none');
+        }, 2000);
+    }
+}
+
+// ========== INITIALIZATION ==========
+// 确保 fontNames 在页面加载时可用
+if (typeof fontNames === 'undefined') {
+    var fontNames = [];
+}
