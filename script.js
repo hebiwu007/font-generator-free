@@ -300,3 +300,51 @@ function toggleFont(name, btn) {
     var countEl = document.getElementById('selected-count');
     if (countEl) countEl.textContent = selectedFonts.length;
 }
+
+// ========== SINGLE INPUT HANDLER ==========
+function onSingleInput() {
+    var input = document.getElementById('input-single');
+    if (!input) return;
+    
+    var text = input.value;
+    if (!text.trim()) {
+        document.getElementById('results-single').innerHTML = '';
+        return;
+    }
+    
+    // 调用 generateFonts 函数
+    var results = generateFonts(text);
+    
+    // 显示结果
+    var container = document.getElementById('results-single');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    results.forEach(function(result) {
+        var card = document.createElement('div');
+        card.className = 'bg-gray-50 p-3 rounded-lg flex justify-between items-center';
+        
+        var fontName = document.createElement('div');
+        fontName.className = 'text-xs text-gray-500 font-medium';
+        fontName.textContent = result.name;
+        
+        var text = document.createElement('div');
+        text.className = 'text-lg font-semibold text-blue-600';
+        text.textContent = result.text;
+        
+        var btn = document.createElement('button');
+        btn.className = 'text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100';
+        btn.textContent = '📋 Copy';
+        btn.onclick = function() {
+            navigator.clipboard.writeText(result.text);
+            btn.textContent = '✅';
+            setTimeout(function() { btn.textContent = '📋 Copy'; }, 1500);
+        };
+        
+        card.appendChild(fontName);
+        card.appendChild(text);
+        card.appendChild(btn);
+        container.appendChild(card);
+    });
+}
