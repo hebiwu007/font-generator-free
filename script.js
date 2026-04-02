@@ -322,14 +322,20 @@ function onSingleInput() {
     container.innerHTML = '';
     
     results.forEach(function(result) {
-        var card = document.createElement('div');
-        card.className = 'bg-gray-50 p-3 rounded-lg flex justify-between items-center';
+        var card = document.createElement("div");
+        card.className = "bg-gray-50 p-3 rounded-lg";
+        card.style.height = "80px";
+        card.style.overflow = "hidden";
+        card.className = "bg-gray-50 p-3 rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2";
         
         var fontName = document.createElement('div');
         fontName.className = 'text-xs text-gray-500 font-medium';
         fontName.textContent = result.name;
         
-        var text = document.createElement('div');
+        var text = document.createElement("div");
+        text.className = "text-lg font-semibold text-blue-600 break-all";
+        text.style.maxHeight = "60px";
+        text.style.overflow = "hidden";
         text.className = 'text-lg font-semibold text-blue-600';
         text.textContent = result.text;
         
@@ -342,8 +348,7 @@ function onSingleInput() {
             setTimeout(function() { btn.textContent = '📋 Copy'; }, 1500);
         };
         
-        card.appendChild(fontName);
-        card.appendChild(text);
+        card.appendChild(leftDiv);
         card.appendChild(btn);
         container.appendChild(card);
     });
