@@ -13,9 +13,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <script src="auth.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="script.js"></script>
-    <script src="membership.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
@@ -846,7 +847,8 @@
             htmlContent += '            });\n';
             htmlContent += '        }\n';
             htmlContent += '    </script>\n';
-            htmlContent += '</body>\n';
+            htmlContent += '    <script src="membership.js"></script>
+</body>\n';
             htmlContent += '</html>';
             
             var blob = new Blob([htmlContent], {type: 'text/html;charset=utf-8'});
@@ -977,7 +979,8 @@
             });
             
             htmlContent += '    <script>function copy(i){navigator.clipboard.writeText(document.getElementById("t"+i).textContent).then(()=>alert("Copied!"))}</script>\n';
-            htmlContent += '</body>\n</html>';
+            htmlContent += '    <script src="membership.js"></script>
+</body>\n</html>';
             folder.file('results.html', htmlContent);
             
             // Generate image
@@ -1059,5 +1062,6 @@
             return div.innerHTML;
         }
     </script>
+    <script src="membership.js"></script>
 </body>
 </html>
