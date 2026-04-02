@@ -170,36 +170,6 @@ function convertText(text, fontName) {
     return result;
 }
 
-// 复制到剪贴板
-window.copyToClipboard = function(text, btn) {
-    navigator.clipboard.writeText(text).then(function() {
-        if (btn) {
-            var originalText = btn.textContent;
-            btn.textContent = 'Copied!';
-            btn.classList.add('bg-green-100', 'text-green-700');
-            btn.classList.remove('bg-blue-50', 'text-blue-600');
-            setTimeout(function() {
-                btn.textContent = originalText;
-                btn.classList.remove('bg-green-100', 'text-green-700');
-                btn.classList.add('bg-blue-50', 'text-blue-600');
-            }, 1500);
-        }
-        
-        var toast = document.getElementById('toast');
-        var toastText = document.getElementById('toastText');
-        if (toast && toastText) {
-            toastText.textContent = 'Copied to clipboard!';
-            toast.classList.add('opacity-100');
-            toast.classList.remove('opacity-0', 'pointer-events-none');
-            clearTimeout(window._toastTimer);
-            window._toastTimer = setTimeout(function() {
-                toast.classList.remove('opacity-100');
-                toast.classList.add('opacity-0', 'pointer-events-none');
-            }, 2000);
-        }
-    });
-};
-
 // ========== MODE SWITCHING (从 index.html 移出) ==========
 function switchMode(mode) {
     currentMode = mode;
@@ -321,7 +291,7 @@ function toggleFont(name, btn) {
     if (countEl) countEl.textContent = selectedFonts.length;
 }
 
-// ========== SINGLE INPUT HANDLER ==========// ========== SINGLE INPUT HANDLER ==========
+// ========== SINGLE INPUT HANDLER ==========
 function onSingleInput() {
     var input = document.getElementById('input-single');
     if (!input) return;
