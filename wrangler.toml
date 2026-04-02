@@ -1,14 +1,3 @@
-name = "font-generator-api"
-main = "worker/index.js"
+name = "font-generator-free"
 compatibility_date = "2024-03-01"
-account_id = "e8ae2227899374d7efc0b60bbf39ada9"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "font-generator-db"
-database_id = "c79d9000-aec4-4ec2-9e01-fa63a5907a9b"
-
-[vars]
-GOOGLE_CLIENT_ID = "1070692973169-kh4nort1uo59s8oq2159dqn6pc0cfp6e.apps.googleusercontent.com"
-PAYPAL_CLIENT_ID = "AdAcg8IjJ6g_Cw3hDrQnE0xk4qAG4-pbi7wvKWsDEQkq2D93oz3PDndkOd4cAf1_jTKXPVL8K334AOpB"
-PAYPAL_SECRET = "EDlqkLwfLv004lYc41Inu88RGhBTvEz9QCItB8QB-sGy7ykbW0qiiCcSRH0Vg4uTOUWiLDLvcGonICRI"
+pages_build_output_dir = "."
