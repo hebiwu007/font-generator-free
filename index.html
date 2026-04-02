@@ -9,6 +9,8 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <script src="auth.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -197,9 +199,20 @@
                 </div>
                 
                 <div id="download-area" class="hidden mt-4">
-                    <button onclick="downloadResults()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-green-700 transition flex items-center justify-center gap-2">
-                        📥 Download Results
-                    </button>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <button onclick="downloadResults()" class="bg-green-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-green-700 transition text-sm flex items-center justify-center gap-1">
+                            📄 TXT/ZIP
+                        </button>
+                        <button onclick="downloadAsImage()" class="bg-blue-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-blue-700 transition text-sm flex items-center justify-center gap-1">
+                            🖼️ PNG Image
+                        </button>
+                        <button onclick="downloadAsPDF()" class="bg-purple-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-purple-700 transition text-sm flex items-center justify-center gap-1">
+                            📕 PDF
+                        </button>
+                        <button onclick="downloadAllFormats()" class="bg-gray-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-gray-700 transition text-sm flex items-center justify-center gap-1">
+                            📦 All Formats
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -752,6 +765,165 @@
         function downloadFile(filename, content) {
             var blob = new Blob([content], {type: 'text/plain;charset=utf-8'});
             downloadBlob(filename, blob);
+        }
+        
+        // ========== IMAGE & PDF DOWNLOAD ==========
+        
+        // Generate HTML content for image/PDF
+        function generateDownloadHTML() {
+            var html = '<div style="font-family: Arial, sans-serif; padding: 40px; background: #f8fafc;">';
+            html += '<h1 style="text-align: center; color: #1e293b; margin-bottom: 10px;">Font Generator Free</h1>';
+            html += '<p style="text-align: center; color: #64748b; margin-bottom: 30px; font-size: 14px;">Generated: ' + new Date().toLocaleString() + '</p>';
+            html += '<div style="display: grid; gap: 16px;">';
+            
+            batchResults.forEach(function(r) {
+                html += '<div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">';
+                html += '<div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">' + r.font + '</div>';
+                html += '<div style="font-size: 24px; word-break: break-all;">' + r.output + '</div>';
+                html += '</div>';
+            });
+            
+            html += '</div></div>';
+            return html;
+        }
+        
+        // Download as PNG Image
+        function downloadAsImage() {
+            if (!batchResults || batchResults.length === 0) {
+                showToast('No results to download');
+                return;
+            }
+            
+            showToast('Generating image...');
+            
+            var container = document.createElement('div');
+            container.innerHTML = generateDownloadHTML();
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.width = '800px';
+            document.body.appendChild(container);
+            
+            html2canvas(container.firstChild, {
+                scale: 2,
+                backgroundColor: '#f8fafc',
+                useCORS: true
+            }).then(function(canvas) {
+                document.body.removeChild(container);
+                var link = document.createElement('a');
+                link.download = 'font_generator_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('Downloaded: PNG Image');
+            }).catch(function(err) {
+                document.body.removeChild(container);
+                showToast('Image generation failed');
+                console.error(err);
+            });
+        }
+        
+        // Download as PDF
+        function downloadAsPDF() {
+            if (!batchResults || batchResults.length === 0) {
+                showToast('No results to download');
+                return;
+            }
+            
+            showToast('Generating PDF...');
+            
+            var container = document.createElement('div');
+            container.innerHTML = generateDownloadHTML();
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.width = '700px';
+            document.body.appendChild(container);
+            
+            html2canvas(container.firstChild, {
+                scale: 2,
+                backgroundColor: '#f8fafc',
+                useCORS: true
+            }).then(function(canvas) {
+                document.body.removeChild(container);
+                
+                var imgData = canvas.toDataURL('image/png');
+                var pdf = new jspdf.jsPDF({
+                    orientation: 'portrait',
+                    unit: 'px',
+                    format: [canvas.width / 2, canvas.height / 2]
+                });
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+                pdf.save('font_generator_' + Date.now() + '.pdf');
+                showToast('Downloaded: PDF Document');
+            }).catch(function(err) {
+                document.body.removeChild(container);
+                showToast('PDF generation failed');
+                console.error(err);
+            });
+        }
+        
+        // Download all formats (TXT + Image + PDF in ZIP)
+        function downloadAllFormats() {
+            if (!batchResults || batchResults.length === 0) {
+                showToast('No results to download');
+                return;
+            }
+            
+            showToast('Generating all formats...');
+            
+            var zip = new JSZip();
+            var folder = zip.folder('font_generator');
+            
+            // Add TXT files
+            var txtContent = 'Font Generator Free - Results\n';
+            txtContent += 'Generated: ' + new Date().toLocaleString() + '\n';
+            txtContent += 'Total: ' + batchResults.length + ' results\n';
+            txtContent += '================================\n\n';
+            batchResults.forEach(function(r, i) {
+                txtContent += '[' + (i + 1) + '] ' + r.font + '\n' + r.output + '\n\n';
+            });
+            folder.file('results.txt', txtContent);
+            
+            // Generate image
+            var container = document.createElement('div');
+            container.innerHTML = generateDownloadHTML();
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.width = '800px';
+            document.body.appendChild(container);
+            
+            html2canvas(container.firstChild, {
+                scale: 2,
+                backgroundColor: '#f8fafc',
+                useCORS: true
+            }).then(function(canvas) {
+                document.body.removeChild(container);
+                
+                // Add PNG to ZIP
+                var imgData = canvas.toDataURL('image/png').split(',')[1];
+                folder.file('results.png', imgData, {base64: true});
+                
+                // Add PDF to ZIP
+                var pdf = new jspdf.jsPDF({
+                    orientation: 'portrait',
+                    unit: 'px',
+                    format: [canvas.width / 2, canvas.height / 2]
+                });
+                pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+                
+                // Get PDF as base64
+                var pdfData = pdf.output('datauristring').split(',')[1];
+                folder.file('results.pdf', pdfData, {base64: true});
+                
+                // Download ZIP
+                zip.generateAsync({type: 'blob'}).then(function(blob) {
+                    downloadBlob('font_generator_all_' + Date.now() + '.zip', blob);
+                    showToast('Downloaded: All formats (TXT + PNG + PDF)');
+                });
+            }).catch(function(err) {
+                document.body.removeChild(container);
+                showToast('Generation failed');
+                console.error(err);
+            });
         }
         
         function downloadBlob(filename, blob) {
