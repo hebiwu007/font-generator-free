@@ -259,26 +259,8 @@ function showToast(msg) {
 }
 
 // ========== INITIALIZATION ==========
-// 确保 fontNames 在页面加载时可用
-if (typeof fontNames === 'undefined') {
-}
-
-    var selectedFonts = window.selectedFonts || [];
-    var idx = selectedFonts.indexOf(name);
-    if (idx >= 0) {
-        selectedFonts.splice(idx, 1);
-        btn.classList.remove('bg-blue-600', 'text-white');
-        btn.classList.add('bg-gray-100');
-    } else {
-        selectedFonts.push(name);
-        btn.classList.remove('bg-gray-100');
-        btn.classList.add('bg-blue-600', 'text-white');
-    }
-    window.selectedFonts = selectedFonts;
-    
-    var countEl = document.getElementById('selected-count');
-    if (countEl) countEl.textContent = selectedFonts.length;
-}
+// initFontGrid 已在 script.js 中定义
+// 通过 DOMContentLoaded 调用
 
     </script>
 
