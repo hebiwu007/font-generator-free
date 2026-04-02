@@ -277,24 +277,8 @@ function initFontGrid() {
     });
   }
 
-  // Batch 模式 - Combo Select 下拉框
-  var comboSelect = document.getElementById('combo-select');
-  if (comboSelect) {
-    comboSelect.innerHTML = '<option value="">Select a combo...</option>';
-    // 如果有保存的 combos，加载它们
-    var savedCombos = localStorage.getItem('fg_saved_combos');
-    if (savedCombos) {
-      try {
-        var combos = JSON.parse(savedCombos);
-        combos.forEach(function(combo) {
-          var opt = document.createElement('option');
-          opt.value = combo.name;
-          opt.textContent = combo.name + ' (' + combo.fonts.length + ' fonts)';
-          comboSelect.appendChild(opt);
-        });
-      } catch (e) {}
-    }
-  }
+  // Batch 模式 - Combo Select 下拉框（异步加载）
+  loadComboOptions();
 }
 
 function toggleFont(name, btn) {
@@ -315,6 +299,93 @@ function toggleFont(name, btn) {
 }
 
 // ==================== Batch 模式 - 字体模式切换 ====================
+
+// 加载 Combo 选项（先从 localStorage，再尝试从后端 API）
+function loadComboOptions() {
+  var comboSelect = document.getElementById('combo-select');
+  if (!comboSelect) return;
+
+  comboSelect.innerHTML = '<option value="">Loading combos...</option>';
+
+  var allCombos = [];
+
+  // 1. 先从 localStorage 加载本地 combos
+  try {
+    var savedCombos = localStorage.getItem('fg_saved_combos');
+    if (savedCombos) {
+      var localCombos = JSON.parse(savedCombos);
+      if (Array.isArray(localCombos)) {
+        localCombos.forEach(function(c) {
+          allCombos.push({ name: c.name, fonts: c.fonts, source: 'local' });
+        });
+      }
+    }
+  } catch (e) {}
+
+  // 2. 尝试从后端 API 加载云端 combos
+  if (typeof getFontComboList === 'function') {
+    getFontComboList().then(function(apiCombos) {
+      if (Array.isArray(apiCombos)) {
+        window._cachedCloudCombos = apiCombos; // 缓存供 getComboFonts 使用
+        apiCombos.forEach(function(c) {
+          var exists = allCombos.some(function(ac) { return ac.name === c.name; });
+          if (!exists) {
+            try {
+              allCombos.push({ name: c.name, fonts: JSON.parse(c.fonts), source: 'cloud' });
+            } catch (e2) {
+              allCombos.push({ name: c.name, fonts: c.fonts || [], source: 'cloud' });
+            }
+          }
+        });
+      }
+      renderComboOptions(comboSelect, allCombos);
+    }).catch(function() {
+      renderComboOptions(comboSelect, allCombos);
+    });
+  } else {
+    renderComboOptions(comboSelect, allCombos);
+  }
+}
+
+function renderComboOptions(selectEl, combos) {
+  selectEl.innerHTML = '<option value="">Select a combo...</option>';
+  if (combos.length === 0) {
+    var opt = document.createElement('option');
+    opt.disabled = true;
+    opt.textContent = 'No combos saved yet';
+    selectEl.appendChild(opt);
+    return;
+  }
+  combos.forEach(function(combo) {
+    var opt = document.createElement('option');
+    opt.value = combo.name;
+    opt.textContent = combo.name + ' (' + combo.fonts.length + ' fonts) ' + (combo.source === 'cloud' ? '☁️' : '💾');
+    selectEl.appendChild(opt);
+  });
+}
+
+// Batch 模式中 batchConvert 需要查找 combo 的字体列表
+function getComboFonts(comboName) {
+  // 1. 先从 localStorage 查找
+  try {
+    var savedCombos = localStorage.getItem('fg_saved_combos');
+    if (savedCombos) {
+      var combos = JSON.parse(savedCombos);
+      var found = combos.find(function(c) { return c.name === comboName; });
+      if (found && found.fonts) return found.fonts;
+    }
+  } catch (e) {}
+
+  // 2. 查缓存的云端 combos
+  if (window._cachedCloudCombos) {
+    var combo = window._cachedCloudCombos.find(function(c) { return c.name === comboName; });
+    if (combo) {
+      try { return JSON.parse(combo.fonts); } catch (e) { return combo.fonts || []; }
+    }
+  }
+
+  return [];
+}
 
 function initBatchFontModeHandlers() {
   var radios = document.querySelectorAll('input[name="font-mode"]');
@@ -444,15 +515,8 @@ function batchConvert() {
   } else if (fontMode === 'combo') {
     var comboName = document.getElementById('combo-select').value;
     if (!comboName) { showToast('Please select a combo'); return; }
-    var savedCombos = localStorage.getItem('fg_saved_combos');
-    if (savedCombos) {
-      try {
-        var combos = JSON.parse(savedCombos);
-        var combo = combos.find(function(c) { return c.name === comboName; });
-        if (combo) fonts = combo.fonts;
-      } catch (e) {}
-    }
-    if (fonts.length === 0) { showToast('Combo not found'); return; }
+    fonts = getComboFonts(comboName);
+    if (fonts.length === 0) { showToast('Combo not found. Create one in Combos page first.'); return; }
   } else {
     // multiple - 使用已选字体
     fonts = selectedFonts.slice();
@@ -581,35 +645,102 @@ function downloadAsImage() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
 
-  var previewContent = document.getElementById('preview-content');
-  if (previewContent && typeof html2canvas !== 'undefined') {
-    html2canvas(previewContent).then(function(canvas) {
-      var link = document.createElement('a');
-      link.download = 'font-results.png';
-      link.href = canvas.toDataURL();
-      link.click();
-    });
-  } else {
-    showToast('Image export requires html2canvas library');
+  // 使用 Canvas 直接绘制，避免 html2canvas 对 Unicode 字体的渲染问题
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+
+  var fontSize = 16;
+  var lineHeight = 28;
+  var padding = 30;
+  var labelHeight = 14;
+  var maxWidth = 800;
+  var rowHeight = lineHeight + labelHeight + 8;
+
+  // 计算需要的行数和实际高度
+  var totalRows = results.length;
+  canvas.width = maxWidth;
+  canvas.height = Math.max(200, padding * 2 + totalRows * rowHeight);
+
+  // 白色背景
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 标题
+  ctx.fillStyle = '#1e40af';
+  ctx.font = 'bold 20px Arial, sans-serif';
+  ctx.fillText('Font Generator Results', padding, padding + 16);
+
+  var y = padding + 50;
+
+  results.forEach(function(r) {
+    if (y + rowHeight > canvas.height - padding) return; // 防止溢出
+
+    // 字体名称标签
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px Arial, sans-serif';
+    ctx.fillText('[' + r.font + '] ' + r.source, padding, y);
+
+    // 转换后的文本
+    ctx.fillStyle = '#1e40af';
+    ctx.font = fontSize + 'px Arial, sans-serif';
+    // 截断过长文本
+    var displayText = r.output;
+    if (displayText.length > 80) displayText = displayText.substring(0, 80) + '...';
+    ctx.fillText(displayText, padding, y + labelHeight + 4);
+
+    // 分隔线
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.beginPath();
+    ctx.moveTo(padding, y + rowHeight - 4);
+    ctx.lineTo(maxWidth - padding, y + rowHeight - 4);
+    ctx.stroke();
+
+    y += rowHeight;
+  });
+
+  // 水印
+  if (!window.membershipStatus || !window.membershipStatus.isPro) {
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '11px Arial, sans-serif';
+    ctx.fillText('Generated by Font Generator Free', padding, canvas.height - 12);
   }
+
+  // 下载
+  var link = document.createElement('a');
+  link.download = 'font-results-' + Date.now() + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('PNG downloaded!');
 }
 
 function downloadAsPDF() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
 
-  if (typeof jspdf !== 'undefined') {
-    var doc = new jspdf.jsPDF();
-    var y = 20;
-    results.forEach(function(r) {
-      if (y > 270) { doc.addPage(); y = 20; }
-      doc.text(r.font + ': ' + r.output, 20, y);
-      y += 10;
-    });
-    doc.save('font-results.pdf');
-  } else {
-    showToast('PDF export requires jsPDF library');
-  }
+  // jsPDF 2.x 通过 jspdf.jsPDF 访问
+  var jsPDFConstructor = (typeof jspdf !== 'undefined' && jspdf.jsPDF) ? jspdf.jsPDF : (typeof jsPDF !== 'undefined' ? jsPDF : null);
+  if (!jsPDFConstructor) { showToast('PDF library not loaded'); return; }
+
+  var doc = new jsPDFConstructor();
+  var y = 20;
+  var pageWidth = doc.internal.pageSize.getWidth();
+
+  results.forEach(function(r) {
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    doc.text('[' + r.font + '] (' + r.source + ')', 20, y);
+    y += 6;
+    doc.setFontSize(13);
+    doc.setTextColor(30, 64, 175);
+    var displayText = r.output;
+    if (displayText.length > 60) displayText = displayText.substring(0, 60) + '...';
+    doc.text(displayText, 20, y);
+    y += 12;
+  });
+
+  doc.save('font-results-' + Date.now() + '.pdf');
+  showToast('PDF downloaded!');
 }
 
 function downloadAllFormats() {
