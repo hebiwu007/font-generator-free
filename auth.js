@@ -72,7 +72,7 @@ function fg_showUser(user) {
 
 function fg_toast(msg, type) {
     var el = document.getElementById('toast');
-    var txt = document.getElementById('toastText');
+    var txt = document.getElementById('toast-text') || document.getElementById('toastText');
     if (!el || !txt) return;
     el.classList.remove('toast-error', 'toast-info');
     if (type === 'error') el.classList.add('toast-error');

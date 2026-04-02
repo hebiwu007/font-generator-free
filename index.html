@@ -12,11 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <script src="auth.js"></script>
-    <script src="script.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-    
-    
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
@@ -42,7 +38,7 @@
 
     <!-- Main Content -->
     <main class="flex-grow container mx-auto px-4 max-w-5xl py-6">
-        
+
         <!-- Mode Tabs -->
         <div class="flex justify-center mb-6">
             <div class="inline-flex bg-white rounded-xl p-1 shadow-sm border border-gray-200">
@@ -66,21 +62,21 @@
                     </svg>
                 </button>
             </div>
-            
+
             <!-- Results Grid -->
-            <div id="results-single" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-h-96 overflow-y-auto">
+            <div id="results-single" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-h-[600px] overflow-y-auto">
                 <div class="col-span-full text-center text-gray-400 py-10">
                     Type above to see 30+ font styles ✨
                 </div>
             </div>
         </div>
-        
+
         <!-- ==================== BATCH MODE ==================== -->
         <div id="section-batch" class="hidden">
             <!-- Input Area -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
                 <h3 class="text-lg font-bold mb-3">📁 Batch Input</h3>
-                
+
                 <!-- File Import -->
                 <div class="flex flex-wrap gap-3 mb-4">
                     <button onclick="document.getElementById('file-input').click()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2">
@@ -94,20 +90,20 @@
                         📝 Paste Text
                     </button>
                 </div>
-                
+
                 <!-- Batch Text Input -->
-                <textarea id="batch-text" rows="5" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none mb-4" placeholder="Or paste multiple lines here... (each line = one text block)"></textarea>
-                
+                <textarea id="batch-text" rows="4" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none mb-4" placeholder="Or paste multiple lines here... (each line = one text block)"></textarea>
+
                 <!-- Import List -->
                 <div id="import-list" class="space-y-2"></div>
-                
+
                 <!-- Clear All Button -->
                 <div class="mt-3 flex justify-end" id="clear-all-container" style="display:none;">
                     <button onclick="clearAllInput()" class="text-sm text-red-500 hover:text-red-700 font-medium">
                         🗑️ Clear All
                     </button>
                 </div>
-                
+
                 <!-- Empty State -->
                 <div id="batch-empty" class="text-center py-6 text-gray-400">
                     <div class="text-4xl mb-2">📋</div>
@@ -115,11 +111,11 @@
                     <p class="text-xs mt-1">Max 10 files, 1MB each</p>
                 </div>
             </div>
-            
+
             <!-- Font Selection -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
                 <h3 class="text-lg font-bold mb-3">🔤 Select Fonts</h3>
-                
+
                 <!-- Mode Selection -->
                 <div class="flex flex-wrap gap-4 mb-4">
                     <label class="flex items-center gap-2 cursor-pointer">
@@ -135,20 +131,20 @@
                         <span>Use Combo</span>
                     </label>
                 </div>
-                
+
                 <!-- Single Font Select -->
                 <div id="mode-single-font" class="mb-4">
                     <select id="single-font-select" class="w-full md:w-64 p-2 bg-gray-50 border border-gray-200 rounded-lg">
                         <option value="">Select a font...</option>
                     </select>
                 </div>
-                
+
                 <!-- Multiple Fonts Grid -->
                 <div id="mode-multiple-fonts" class="hidden mb-4">
                     <div id="batch-font-grid" class="grid grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200"></div>
                     <p class="text-xs text-gray-500 mt-2">Selected: <span id="selected-count">0</span> fonts</p>
                 </div>
-                
+
                 <!-- Combo Select -->
                 <div id="mode-combo" class="hidden">
                     <select id="combo-select" class="w-full md:w-64 p-2 bg-gray-50 border border-gray-200 rounded-lg">
@@ -156,7 +152,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <!-- Output Format -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
                 <h3 class="text-lg font-bold mb-3">📤 Output Format</h3>
@@ -179,18 +175,18 @@
                     </label>
                 </div>
             </div>
-            
+
             <!-- Convert & Download -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                 <button onclick="batchConvert()" id="convert-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50">
                     🔄 Start Convert
                 </button>
-                
+
                 <div id="preview-area" class="hidden mt-4">
                     <h4 class="font-bold mb-2">Preview (<span id="result-count">0</span> results)</h4>
                     <div id="preview-content" class="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto text-sm font-mono whitespace-pre-wrap border border-gray-200"></div>
                 </div>
-                
+
                 <div id="download-area" class="hidden mt-4">
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                         <button onclick="downloadResults()" class="bg-green-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-green-700 transition text-sm flex items-center justify-center gap-1">
@@ -200,19 +196,19 @@
                             🌐 HTML
                         </button>
                         <button onclick="downloadAsImage()" class="bg-blue-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-blue-700 transition text-sm flex items-center justify-center gap-1">
-                            🖼️ PNG Image
+                            🖼️ PNG
                         </button>
                         <button onclick="downloadAsPDF()" class="bg-purple-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-purple-700 transition text-sm flex items-center justify-center gap-1">
                             📕 PDF
                         </button>
                         <button onclick="downloadAllFormats()" class="bg-gray-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-gray-700 transition text-sm flex items-center justify-center gap-1">
-                            📦 All Formats
+                            📦 All
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Ad Banner -->
         <div id="ad-banner" class="mt-6"></div>
     </main>
@@ -227,11 +223,13 @@
         <span id="toast-text">Done!</span>
     </div>
 
-    
+    <!-- Scripts (顺序：auth → script → membership) -->
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+    <script src="membership.js"></script>
+
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            initFontGrid();
-        });
+        document.getElementById('year').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
