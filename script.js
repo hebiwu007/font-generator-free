@@ -25,8 +25,16 @@ function genBoldItalic() { return makeMap(0x1D43C, 0x1D420, 0x1D7EC); }
 // Mathematical Italic
 function genItalic() { return makeMap(0x1D44E, 0x1D434, 0x1D7EC); }
 
-// Mathematical Sans-Serif Bold (using as Gothic/Bold Gothic)
+// Mathematical Sans-Serif Bold
 function genSansSerifBold() { return makeMap(0x1D5D4, 0x1D5EE, 0x1D7EC); }
+
+// Gothic/Fraktur (𝔄𝔅ℭ style)
+// 小写: U+1D51E - U+1D537, 大写: U+1D504 - U+1D51D, 数字: U+1D7D8
+function genGothic() { return makeMap(0x1D51E, 0x1D504, 0x1D7D8); }
+
+// Bold Gothic/Fraktur (𝕬𝕭ℭ style)
+// 小写: U+1D584 - U+1D59D, 大写: U+1D56C - U+1D583, 数字: U+1D7D8
+function genBoldGothic() { return makeMap(0x1D584, 0x1D56C, 0x1D7D8); }
 
 // Mathematical Double-Struck
 function genDoubleStruck() { return makeMap(0x1D538, 0x1D53B, 0x1D7D8); }
@@ -41,8 +49,8 @@ const fontDictionaries = [
     { name: "Bold Italic", map: genBoldItalic() },
     { name: "Double Struck", map: genDoubleStruck() },
     { name: "Cursive", map: genScript() },
-    { name: "Gothic", map: genSansSerifBold() },
-    { name: "Bold Gothic", map: genSansSerifBold() },
+    { name: "Gothic", map: genGothic() },
+    { name: "Bold Gothic", map: genBoldGothic() },
     { name: "Monospace", map: makeMap(0x1D670, 0x1D670, 0x1D7F6) },
     { name: "Bold Cursive", map: genBoldItalic() },
     { name: "Bubble", map: makeMap(0x24D0, 0x24B6, 0x245F) },
