@@ -26,6 +26,7 @@
             </a>
             <div class="flex items-center gap-3">
                 <a href="combo.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">🎨 Combos</a>
+                <a href="javascript:void(0)" onclick="toggleHistoryPanel()" class="text-sm text-blue-600 font-semibold hover:text-blue-700">🕐 History</a>
                 <a href="pricing.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Pricing</a>
                 <span id="pro-badge" class="hidden"></span>
                 <div id="auth-login-btn"></div>
@@ -68,17 +69,7 @@
                     Type above to see 30+ font styles ✨
                 </div>
             </div>
-
-            <!-- History -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-center mb-3">
-                    <h4 class="font-bold text-sm text-gray-600">🕐 History</h4>
-                    <button onclick="clearHistory()" class="text-xs text-gray-400 hover:text-red-500 transition">Clear</button>
-                </div>
-                <div id="history-list" class="max-h-48 overflow-y-auto">
-                    <div class="text-gray-400 text-sm text-center py-4">No history yet</div>
-                </div>
-            </div>
+        </div>
         </div>
 
         <!-- ==================== BATCH MODE ==================== -->
@@ -248,5 +239,19 @@
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
     </script>
+
+    <!-- History Floating Panel -->
+    <div id="history-panel" class="hidden fixed right-4 top-16 w-80 max-h-[70vh] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b border-gray-100">
+            <h4 class="font-bold text-sm text-gray-700">🕐 History</h4>
+            <div class="flex gap-2">
+                <button onclick="clearHistory()" class="text-xs text-gray-400 hover:text-red-500 transition">Clear All</button>
+                <button onclick="toggleHistoryPanel()" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+            </div>
+        </div>
+        <div id="history-list" class="p-2 max-h-[55vh] overflow-y-auto">
+            <div class="text-gray-400 text-sm text-center py-4">No history yet</div>
+        </div>
+    </div>
 </body>
 </html>

@@ -321,6 +321,17 @@ function renderHistory() {
   container.innerHTML = html;
 }
 
+function toggleHistoryPanel() {
+  var panel = document.getElementById('history-panel');
+  if (!panel) return;
+  if (panel.classList.contains('hidden')) {
+    panel.classList.remove('hidden');
+    renderHistory();
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+
 // ==================== Batch 模式 - 字体网格 ====================
 
 var selectedFonts = []; // Batch 模式选中的字体列表
