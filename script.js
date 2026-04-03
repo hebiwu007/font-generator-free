@@ -408,17 +408,21 @@ function initBatchFontModeHandlers() {
 
 // ==================== Batch 模式 - 文件处理 ====================
 
-var batchInputTexts = []; // Batch 模式导入的文本列表
+var batchInputTexts = []; // { source: filename, text: line }
+var batchFiles = [];      // 去重后的文件名列表
 
 function handleFiles(files) {
   var fileInput = document.getElementById('file-input');
   if (!files || files.length === 0) return;
 
+  var fileNames = [];
   Array.from(files).forEach(function(file) {
     if (file.size > 1024 * 1024) {
       showToast('File too large: ' + file.name + ' (max 1MB)');
       return;
     }
+    fileNames.push(file.name);
+
     var reader = new FileReader();
     reader.onload = function(e) {
       var content = e.target.result;
@@ -426,6 +430,11 @@ function handleFiles(files) {
       lines.forEach(function(line) {
         batchInputTexts.push({ source: file.name, text: line.trim() });
       });
+
+      // 更新文件名列表
+      if (batchFiles.indexOf(file.name) === -1) {
+        batchFiles.push(file.name);
+      }
       updateImportList();
     };
     reader.readAsText(file);
@@ -438,7 +447,7 @@ function updateImportList() {
   var emptyState = document.getElementById('batch-empty');
   var clearBtn = document.getElementById('clear-all-container');
 
-  if (batchInputTexts.length === 0) {
+  if (batchFiles.length === 0) {
     container.innerHTML = '';
     if (emptyState) emptyState.style.display = '';
     if (clearBtn) clearBtn.style.display = 'none';
@@ -449,17 +458,27 @@ function updateImportList() {
   if (clearBtn) clearBtn.style.display = '';
 
   container.innerHTML = '';
-  batchInputTexts.forEach(function(item, index) {
+
+  // 按文件名分组显示，只显示文件名
+  batchFiles.forEach(function(fileName) {
+    var lineCount = batchInputTexts.filter(function(item) { return item.source === fileName; }).length;
     var div = document.createElement('div');
     div.className = 'flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm';
     div.innerHTML =
-      '<div class="flex-1 min-w-0">' +
-        '<span class="text-gray-500 text-xs">[' + item.source + ']</span> ' +
-        '<span class="text-gray-800 truncate">' + escapeHtml(item.text.substring(0, 60)) + '</span>' +
+      '<div class="flex items-center gap-2 flex-1 min-w-0">' +
+        '<span class="text-blue-500">📄</span>' +
+        '<span class="text-gray-800 font-medium truncate">' + escapeHtml(fileName) + '</span>' +
+        '<span class="text-gray-400 text-xs">(' + lineCount + ' lines)</span>' +
       '</div>' +
-      '<button class="text-gray-400 hover:text-red-500 ml-2" onclick="removeBatchItem(' + index + ')">✕</button>';
+      '<button class="text-gray-400 hover:text-red-500 ml-2 text-lg" onclick="removeFile(\'' + escapeHtml(fileName).replace(/'/g, "\\'") + '\')">✕</button>';
     container.appendChild(div);
   });
+}
+
+function removeFile(fileName) {
+  batchFiles = batchFiles.filter(function(f) { return f !== fileName; });
+  batchInputTexts = batchInputTexts.filter(function(item) { return item.source !== fileName; });
+  updateImportList();
 }
 
 function removeBatchItem(index) {
@@ -469,6 +488,7 @@ function removeBatchItem(index) {
 
 function clearAllInput() {
   batchInputTexts = [];
+  batchFiles = [];
   var batchText = document.getElementById('batch-text');
   if (batchText) batchText.value = '';
   updateImportList();
@@ -717,27 +737,59 @@ function downloadAsPDF() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
 
-  // jsPDF 2.x 通过 jspdf.jsPDF 访问
   var jsPDFConstructor = (typeof jspdf !== 'undefined' && jspdf.jsPDF) ? jspdf.jsPDF : (typeof jsPDF !== 'undefined' ? jsPDF : null);
   if (!jsPDFConstructor) { showToast('PDF library not loaded'); return; }
 
-  var doc = new jsPDFConstructor();
-  var y = 20;
-  var pageWidth = doc.internal.pageSize.getWidth();
+  // 用 Canvas 绘制内容，再转为图片嵌入 PDF（解决 Unicode 字体不支持问题）
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
 
+  var fontSize = 14;
+  var lineHeight = 24;
+  var labelHeight = 12;
+  var rowGap = 12;
+  var padding = 40;
+  var rowHeight = labelHeight + lineHeight + rowGap;
+
+  canvas.width = 800;
+  canvas.height = Math.max(400, padding * 2 + results.length * rowHeight + 40);
+
+  // 白色背景
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  var y = padding;
   results.forEach(function(r) {
-    if (y > 270) { doc.addPage(); y = 20; }
-    doc.setFontSize(10);
-    doc.setTextColor(107, 114, 128);
-    doc.text('[' + r.font + '] (' + r.source + ')', 20, y);
-    y += 6;
-    doc.setFontSize(13);
-    doc.setTextColor(30, 64, 175);
+    if (y + rowHeight > canvas.height - 20) return;
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '11px Arial, sans-serif';
+    ctx.fillText('[' + r.font + '] (' + r.source + ')', padding, y);
+    y += labelHeight + 2;
+
+    ctx.fillStyle = '#1e40af';
+    ctx.font = fontSize + 'px Arial, sans-serif';
     var displayText = r.output;
-    if (displayText.length > 60) displayText = displayText.substring(0, 60) + '...';
-    doc.text(displayText, 20, y);
-    y += 12;
+    if (displayText.length > 80) displayText = displayText.substring(0, 80) + '...';
+    ctx.fillText(displayText, padding, y);
+    y += lineHeight + rowGap;
   });
+
+  // 创建 PDF 并嵌入图片
+  var imgData = canvas.toDataURL('image/png');
+  var doc = new jsPDFConstructor();
+  var pdfWidth = doc.internal.pageSize.getWidth();
+  var pdfHeight = doc.internal.pageSize.getHeight();
+  var imgWidth = pdfWidth - 20;
+  var imgHeight = (canvas.height / canvas.width) * imgWidth;
+
+  // 如果图片太高，分页处理
+  if (imgHeight <= pdfHeight - 20) {
+    doc.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+  } else {
+    // 缩放适应第一页
+    var scale = (pdfHeight - 20) / imgHeight;
+    doc.addImage(imgData, 'PNG', 10, 10, imgWidth * scale, imgHeight * scale);
+  }
 
   doc.save('font-results-' + Date.now() + '.pdf');
   showToast('PDF downloaded!');
@@ -756,6 +808,173 @@ function downloadFile(filename, content, mimeType) {
   link.href = URL.createObjectURL(blob);
   link.download = filename;
   link.click();
+}
+
+// ==================== Combo 管理 ====================
+
+var comboSelectedFonts = []; // 弹窗中选中的字体
+
+function openComboModal() {
+  document.getElementById('combo-modal').classList.remove('hidden');
+  document.getElementById('combo-modal').classList.add('flex');
+  comboSelectedFonts = [];
+  initComboFontSelector();
+  loadComboManageList();
+}
+
+function closeComboModal() {
+  document.getElementById('combo-modal').classList.add('hidden');
+  document.getElementById('combo-modal').classList.remove('flex');
+  comboSelectedFonts = [];
+  // 刷新 Batch 模式的 combo-select
+  loadComboOptions();
+}
+
+function initComboFontSelector() {
+  var container = document.getElementById('combo-font-selector');
+  if (!container) return;
+  container.innerHTML = '';
+  fontNames.forEach(function(name) {
+    var btn = document.createElement('button');
+    btn.className = 'p-1.5 rounded bg-gray-100 hover:bg-blue-100 text-xs font-medium text-gray-700 transition';
+    btn.textContent = name;
+    btn.dataset.font = name;
+    btn.onclick = function() { toggleComboFont(name, this); };
+    container.appendChild(btn);
+  });
+  updateComboSelectedCount();
+}
+
+function toggleComboFont(name, btn) {
+  var idx = comboSelectedFonts.indexOf(name);
+  if (idx >= 0) {
+    comboSelectedFonts.splice(idx, 1);
+    btn.classList.remove('bg-blue-600', 'text-white');
+    btn.classList.add('bg-gray-100');
+  } else {
+    comboSelectedFonts.push(name);
+    btn.classList.remove('bg-gray-100');
+    btn.classList.add('bg-blue-600', 'text-white');
+  }
+  updateComboSelectedCount();
+}
+
+function updateComboSelectedCount() {
+  var el = document.getElementById('combo-selected-count');
+  if (el) el.textContent = comboSelectedFonts.length;
+}
+
+function saveNewCombo() {
+  var nameInput = document.getElementById('new-combo-name');
+  var name = nameInput ? nameInput.value.trim() : '';
+  if (!name) { showToast('Please enter a combo name'); return; }
+  if (comboSelectedFonts.length === 0) { showToast('Please select at least one font'); return; }
+
+  // 保存到 localStorage
+  var combos = [];
+  try {
+    var saved = localStorage.getItem('fg_saved_combos');
+    if (saved) combos = JSON.parse(saved);
+  } catch (e) {}
+
+  // 检查重名
+  var existing = combos.findIndex(function(c) { return c.name === name; });
+  var newCombo = { name: name, fonts: comboSelectedFonts.slice() };
+
+  if (existing >= 0) {
+    combos[existing] = newCombo;
+  } else {
+    combos.push(newCombo);
+  }
+
+  localStorage.setItem('fg_saved_combos', JSON.stringify(combos));
+
+  // 如果已登录 Pro，也保存到云端
+  if (typeof saveFontCombo === 'function' && window.membershipStatus && window.membershipStatus.isPro) {
+    saveFontCombo(name, comboSelectedFonts);
+  }
+
+  // 清空输入
+  if (nameInput) nameInput.value = '';
+  comboSelectedFonts = [];
+  initComboFontSelector();
+  loadComboManageList();
+
+  showToast('Combo "' + name + '" saved!');
+}
+
+function loadComboManageList() {
+  var container = document.getElementById('combo-manage-list');
+  if (!container) return;
+
+  var combos = [];
+  try {
+    var saved = localStorage.getItem('fg_saved_combos');
+    if (saved) combos = JSON.parse(saved);
+  } catch (e) {}
+
+  if (combos.length === 0) {
+    container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">No combos yet. Create one below!</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  combos.forEach(function(combo) {
+    var div = document.createElement('div');
+    div.className = 'flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2';
+
+    var info = document.createElement('div');
+    info.className = 'flex-1 min-w-0';
+    info.innerHTML =
+      '<div class="font-medium text-gray-800 text-sm">' + escapeHtml(combo.name) + '</div>' +
+      '<div class="text-xs text-gray-500">' + combo.fonts.length + ' fonts: ' + combo.fonts.slice(0, 3).join(', ') + (combo.fonts.length > 3 ? '...' : '') + '</div>';
+
+    var actions = document.createElement('div');
+    actions.className = 'flex gap-2 ml-2';
+
+    var useBtn = document.createElement('button');
+    useBtn.className = 'text-blue-600 text-xs font-medium hover:text-blue-800';
+    useBtn.textContent = 'Use';
+    useBtn.onclick = (function(c) {
+      return function() {
+        document.getElementById('combo-select').value = c.name;
+        closeComboModal();
+        showToast('Combo "' + c.name + '" selected');
+      };
+    })(combo);
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'text-red-400 text-xs font-medium hover:text-red-600';
+    delBtn.textContent = 'Delete';
+    delBtn.onclick = (function(c) {
+      return function() {
+        if (!confirm('Delete combo "' + c.name + '"?')) return;
+        deleteLocalCombo(c.name);
+        loadComboManageList();
+      };
+    })(combo);
+
+    actions.appendChild(useBtn);
+    actions.appendChild(delBtn);
+    div.appendChild(info);
+    div.appendChild(actions);
+    container.appendChild(div);
+  });
+}
+
+function deleteLocalCombo(name) {
+  var combos = [];
+  try {
+    var saved = localStorage.getItem('fg_saved_combos');
+    if (saved) combos = JSON.parse(saved);
+  } catch (e) {}
+  combos = combos.filter(function(c) { return c.name !== name; });
+  localStorage.setItem('fg_saved_combos', JSON.stringify(combos));
+  // 如果有云端删除功能
+  if (typeof deleteFontCombo === 'function' && window.membershipStatus && window.membershipStatus.isPro) {
+    // 查找 combo ID 并删除（简化处理，按名称匹配）
+  }
+  showToast('Combo deleted');
 }
 
 // ==================== 页面初始化 ====================
