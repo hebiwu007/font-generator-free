@@ -171,9 +171,14 @@
                         });
                     },
                     onApprove: function(data, actions) {
-                        // 支付授权成功
-                        alert('Payment authorized! Processing...');
-                        window.location.href = 'index.html?payment=success&orderId=' + data.orderID;
+                        // 捕获订单 — 完成实际扣款
+                        return actions.order.capture().then(function(details) {
+                            var payerName = details.payer.name.given_name;
+                            var orderId = details.id;
+                            var amount = details.purchase_units[0].amount.value;
+                            alert('Payment successful!\n\nThank you, ' + payerName + '!\nOrder ID: ' + orderId + '\nAmount: $' + amount);
+                            console.log('Payment captured:', details);
+                        });
                     },
                     onError: function(err) {
                         console.error('PayPal Error:', err);
