@@ -1205,6 +1205,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function updateProUI() {
   var isPro = isProUser();
+  // Plan badge 显示 Free 或 Pro
+  var planBadge = document.getElementById('plan-badge');
+  if (planBadge) {
+    if (isPro) {
+      planBadge.textContent = '⭐ Pro';
+      planBadge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white';
+    } else {
+      planBadge.textContent = 'Free';
+      planBadge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600 cursor-pointer';
+      planBadge.onclick = function() { window.location.href = 'pricing.html'; };
+    }
+  }
   // Pro 用户隐藏 PRO 标签
   var tags = document.querySelectorAll('#png-pro-tag, #pdf-pro-tag');
   tags.forEach(function(tag) {
