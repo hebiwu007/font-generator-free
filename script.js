@@ -274,8 +274,13 @@ function getHistory() {
 }
 
 function saveToHistory(text) {
-  if (!isProUser()) return; // 历史记录仅 Pro 用户
   if (!text || !text.trim()) return;
+  
+  // 检查 Pro 状态
+  var isPro = isProUser();
+  console.log('[History] saveToHistory called, isPro:', isPro, 'text:', text.substring(0, 30));
+  
+  if (!isPro) return; // 历史记录仅 Pro 用户
   
   // 保存到本地
   var history = getHistory();
@@ -292,14 +297,20 @@ function saveToHistory(text) {
 function syncHistoryToBackend(text) {
   var session = null;
   try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
-  if (!session || !session.user) return;
+  if (!session || !session.user) {
+    console.warn('[History] No session found, cannot sync to backend');
+    return;
+  }
   
+  console.log('[History] Syncing to backend, google_sub:', session.user.sub);
   fetch('https://font-generator-api.hebiwu007.workers.dev/api/history/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ google_sub: session.user.sub, text: text })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    console.log('[History] Backend sync result:', d);
   }).catch(function(e) {
-    console.error('Failed to sync history:', e);
+    console.error('[History] Failed to sync history:', e);
   });
 }
 
@@ -906,16 +917,27 @@ function isProUser() {
   // 必须先登录 Google
   var session = null;
   try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
-  if (!session || !session.user) return false;
+  if (!session || !session.user) {
+    console.log('[ProCheck] No session');
+    return false;
+  }
   
   // 1. 检查后端 Pro 状态（auth.js 登录时从后端验证并缓存）
-  if (window.membershipStatus && window.membershipStatus.isPro) return true;
+  if (window.membershipStatus && window.membershipStatus.isPro) {
+    console.log('[ProCheck] Is Pro via membershipStatus');
+    return true;
+  }
   
   // 2. 检查 localStorage Pro 状态（支付成功后标记 + 后端验证缓存）
   try {
     var proData = JSON.parse(localStorage.getItem('fg_pro_status'));
-    if (proData && proData.status === 'pro') return true;
+    if (proData && proData.status === 'pro') {
+      console.log('[ProCheck] Is Pro via localStorage, plan:', proData.plan);
+      return true;
+    }
   } catch (e) {}
+  
+  console.log('[ProCheck] NOT Pro');
   return false;
 }
 
