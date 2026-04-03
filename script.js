@@ -677,14 +677,19 @@ function groupResults(results, format) {
 
 // ==================== Batch 模式 - 下载 ====================
 
-// 📄 TXT 下载
+// 📄 TXT 下载（改为 HTML 格式确保字体正确显示）
 function downloadAsTXT() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
   var format = getOutputFormat();
-  var content = generateTXTContent(results, format);
-  downloadFile('font-results.txt', content, 'text/plain');
-  showToast('TXT downloaded!');
+  var plainContent = generateTXTContent(results, format);
+  // 包装为 HTML 页面
+  var htmlContent = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Font Generator Results</title>' +
+    '<style>body{font-family:"Segoe UI Symbol","Noto Sans","Noto Sans Symbols 2","DejaVu Sans","Apple Symbols",system-ui,sans-serif;' +
+    'padding:30px;background:#fff;color:#1e40af;font-size:16px;line-height:1.8;white-space:pre-wrap;word-break:break-all;}</style>' +
+    '</head><body>' + escapeHtml(plainContent) + '</body></html>';
+  downloadFile('font-results.html', htmlContent, 'text/html');
+  showToast('HTML downloaded!');
 }
 
 // 📁 ZIP 下载（按 Output Format 决定文件结构）
