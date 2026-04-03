@@ -902,7 +902,9 @@ function downloadAsPDF() {
 }
 
 function downloadFile(filename, content, mimeType) {
-  var blob = new Blob([content], { type: mimeType });
+  // 添加 UTF-8 BOM 确保编码正确
+  var BOM = '\uFEFF';
+  var blob = new Blob([BOM + content], { type: (mimeType || 'text/plain') + '; charset=utf-8' });
   var link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = filename;
