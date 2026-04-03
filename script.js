@@ -210,6 +210,9 @@ function onSingleInput() {
     return;
   }
 
+  // 保存到历史记录
+  saveToHistory(text);
+
   var results = generateFonts(text);
   container.innerHTML = '';
 
@@ -252,6 +255,70 @@ function clearSingle() {
   var input = document.getElementById('input-single');
   if (input) input.value = '';
   onSingleInput();
+}
+
+// ==================== 历史记录 ====================
+
+var HISTORY_KEY = 'fg_history';
+var MAX_HISTORY = 20;
+
+function getHistory() {
+  try {
+    var data = localStorage.getItem(HISTORY_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch(e) { return []; }
+}
+
+function saveToHistory(text) {
+  if (!text || !text.trim()) return;
+  var history = getHistory();
+  // 去重：如果已存在则移到最前面
+  var idx = history.indexOf(text);
+  if (idx >= 0) history.splice(idx, 1);
+  history.unshift(text);
+  if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+function clearHistory() {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+}
+
+function useHistoryText(text) {
+  var input = document.getElementById('input-single');
+  if (input) {
+    input.value = text;
+    onSingleInput();
+  }
+  // 切换到 Single 模式
+  var singleSection = document.getElementById('section-single');
+  var batchSection = document.getElementById('section-batch');
+  if (singleSection && batchSection) {
+    singleSection.classList.remove('hidden');
+    batchSection.classList.add('hidden');
+  }
+}
+
+function renderHistory() {
+  var container = document.getElementById('history-list');
+  if (!container) return;
+  var history = getHistory();
+
+  if (!history.length) {
+    container.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">No history yet</div>';
+    return;
+  }
+
+  var html = '';
+  history.forEach(function(text, i) {
+    var display = text.length > 40 ? text.substring(0, 40) + '...' : text;
+    html += '<div class="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 rounded-lg cursor-pointer transition group" onclick="useHistoryText(' + JSON.stringify(text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"')) + ')">' +
+      '<span class="text-sm text-gray-700 flex-1 truncate">' + escapeHtml(display) + '</span>' +
+      '<span class="text-gray-300 group-hover:text-gray-500 text-xs">↵</span>' +
+    '</div>';
+  });
+  container.innerHTML = html;
 }
 
 // ==================== Batch 模式 - 字体网格 ====================
@@ -1039,6 +1106,7 @@ function deleteLocalCombo(name) {
 document.addEventListener('DOMContentLoaded', function() {
   initFontGrid();
   initBatchFontModeHandlers();
+  renderHistory();
 
   // 自动聚焦输入框
   var singleInput = document.getElementById('input-single');

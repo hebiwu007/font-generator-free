@@ -68,6 +68,17 @@
                     Type above to see 30+ font styles ✨
                 </div>
             </div>
+
+            <!-- History -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-bold text-sm text-gray-600">🕐 History</h4>
+                    <button onclick="clearHistory()" class="text-xs text-gray-400 hover:text-red-500 transition">Clear</button>
+                </div>
+                <div id="history-list" class="max-h-48 overflow-y-auto">
+                    <div class="text-gray-400 text-sm text-center py-4">No history yet</div>
+                </div>
+            </div>
         </div>
 
         <!-- ==================== BATCH MODE ==================== -->
@@ -178,7 +189,7 @@
                 <h4 class="font-bold mb-3">Download</h4>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                     <button onclick="downloadAsTXT()" class="bg-green-600 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-green-700 transition text-sm flex items-center justify-center gap-1.5">
-                        📄 TXT
+                        📄 HTML
                     </button>
                     <button onclick="downloadAsZIP()" class="bg-yellow-600 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-yellow-700 transition text-sm flex items-center justify-center gap-1.5">
                         📁 ZIP
