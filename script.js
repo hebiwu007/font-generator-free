@@ -747,86 +747,62 @@ function downloadAsImage() {
 
   var format = getOutputFormat();
   var groups = groupResults(results, format);
-  var htmlBody = buildResultHTMLBody(groups);
 
-  // 用 SVG foreignObject 将 HTML 渲染到 Canvas
-  var width = 800;
-  var svgData = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '">' +
-    '<foreignObject width="100%" height="100%">' +
-    '<div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Segoe UI Symbol,Noto Sans,Noto Sans Symbols 2,Apple Color Emoji,sans-serif;padding:30px;background:#fff;color:#1e40af;">' +
-    htmlBody +
-    '</div></foreignObject></svg>';
-
-  var svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-  var url = URL.createObjectURL(svgBlob);
-  var img = new Image();
-  img.onload = function() {
-    var canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
-    URL.revokeObjectURL(url);
-
-    var link = document.createElement('a');
-    link.download = 'font-results-' + Date.now() + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('PNG downloaded!');
-  };
-  img.onerror = function() {
-    URL.revokeObjectURL(url);
-    // Fallback: 新窗口打开
-    var fallbackHtml = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Segoe UI Symbol,Noto Sans,sans-serif;padding:30px;color:#1e40af;}</style></head><body>' + htmlBody + '</body></html>';
-    var blob = new Blob([fallbackHtml], { type: 'text/html;charset=utf-8' });
-    window.open(URL.createObjectURL(blob), '_blank');
-    showToast('Opened in new tab - right-click to save image');
-  };
-  img.src = url;
+  // 构建 HTML 页面在新窗口打开
+  var html = buildExportHTML(groups, 'image');
+  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  showToast('Opened in new tab - Ctrl+S or right-click to save');
 }
 
-// 📕 PDF 下载（新窗口 + 自动打印）
+// 📕 PDF 下载
 function downloadAsPDF() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
 
   var format = getOutputFormat();
   var groups = groupResults(results, format);
-  var htmlBody = buildResultHTMLBody(groups);
 
-  var fullHTML = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Font Generator Results</title>' +
-    '<style>@page{margin:15mm;}body{font-family:Segoe UI Symbol,Noto Sans,Noto Sans Symbols 2,Apple Color Emoji,sans-serif;padding:20px;color:#1e40af;font-size:14px;line-height:1.6;}' +
-    '.group-title{font-weight:bold;color:#374151;margin-top:12px;border-bottom:1px solid #ddd;padding-bottom:4px;}' +
-    '.result-line{padding:2px 0 2px 8px;white-space:pre-wrap;word-break:break-all;}' +
-    '.watermark{font-size:10px;color:#999;margin-top:20px;}</style></head><body>' +
-    htmlBody +
-    '</body></html>';
-
-  var blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+  var html = buildExportHTML(groups, 'pdf');
+  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   var url = URL.createObjectURL(blob);
   var w = window.open(url, '_blank');
   if (w) {
     w.onload = function() {
-      setTimeout(function() { w.print(); }, 500);
+      setTimeout(function() { w.print(); }, 600);
     };
   }
-  showToast('PDF opened - use Save as PDF in print dialog');
+  showToast('Print dialog opened - choose Save as PDF');
 }
 
-// 构建结果 HTML body 内容
-function buildResultHTMLBody(groups) {
-  var parts = [];
-  parts.push('<div style="font-size:20px;font-weight:bold;margin-bottom:20px;">Font Generator Results</div>');
+// 构建导出用 HTML 页面
+function buildExportHTML(groups, mode) {
+  var s = [];
+  s.push('<!DOCTYPE html><html><head><meta charset="utf-8">');
+  s.push('<title>Font Generator Results</title>');
+  s.push('<style>');
+  s.push('@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap");');
+  s.push('*{margin:0;padding:0;box-sizing:border-box;}');
+  s.push('body{font-family:"Noto Sans","Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",sans-serif;padding:30px;background:#fff;color:#1e40af;line-height:1.8;}');
+  s.push('.main-title{font-size:22px;font-weight:bold;margin-bottom:24px;}');
+  s.push('.group-title{font-size:14px;font-weight:bold;color:#374151;margin-top:16px;margin-bottom:8px;border-bottom:2px solid #e5e7eb;padding-bottom:4px;}');
+  s.push('.result-line{font-size:16px;padding:4px 0 4px 16px;white-space:pre-wrap;word-break:break-all;}');
+  s.push('.watermark{font-size:11px;color:#9ca3af;margin-top:24px;padding-top:12px;border-top:1px solid #eee;}');
+  if (mode === 'pdf') {
+    s.push('@media print{body{padding:15mm;}.no-print{display:none;}}');
+  }
+  s.push('</style></head><body>');
+  s.push('<div class="main-title">Font Generator Results</div>');
   groups.forEach(function(group) {
-    parts.push('<div class="group-title" style="font-weight:bold;color:#374151;margin-top:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;">── ' + escapeHtml(group.title) + ' ──</div>');
+    s.push('<div class="group-title">── ' + escapeHtml(group.title) + ' ──</div>');
     group.items.forEach(function(r) {
-      parts.push('<div class="result-line" style="padding:2px 0 2px 12px;white-space:pre-wrap;word-break:break-all;">' + escapeHtml(r.output) + '</div>');
+      s.push('<div class="result-line">' + escapeHtml(r.output) + '</div>');
     });
   });
-  parts.push('<div class="watermark" style="font-size:11px;color:#9ca3af;margin-top:16px;">Generated by Font Generator Free</div>');
-  return parts.join('');
+  s.push('<div class="watermark">Generated by Font Generator Free</div>');
+  s.push('</body></html>');
+  return s.join('');
 }
 
 function downloadFile(filename, content, mimeType) {
