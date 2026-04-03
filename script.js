@@ -501,10 +501,19 @@ function handleFiles(files) {
   var fileInput = document.getElementById('file-input');
   if (!files || files.length === 0) return;
 
+  // 文件数量限制
+  var currentCount = batchFiles.length;
+  if (currentCount + files.length > 10) {
+    showToast('Maximum 10 files allowed');
+    return;
+  }
+
   var fileNames = [];
+  var oversized = false;
   Array.from(files).forEach(function(file) {
     if (file.size > 1024 * 1024) {
       showToast('File too large: ' + file.name + ' (max 1MB)');
+      oversized = true;
       return;
     }
     fileNames.push(file.name);
@@ -517,7 +526,6 @@ function handleFiles(files) {
         batchInputTexts.push({ source: file.name, text: line.trim() });
       });
 
-      // 更新文件名列表
       if (batchFiles.indexOf(file.name) === -1) {
         batchFiles.push(file.name);
       }
@@ -525,6 +533,8 @@ function handleFiles(files) {
     };
     reader.readAsText(file);
   });
+
+  if (oversized) return;
   fileInput.value = '';
 }
 

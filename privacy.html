@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Font Generator Free</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm py-4 px-4">
+        <div class="container mx-auto max-w-4xl flex items-center justify-between">
+            <a href="index.html" class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Font Generator Free</a>
+            <a href="index.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">← Back to Generator</a>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 max-w-3xl py-8">
+        <h1 class="text-3xl font-bold mb-6">Privacy Policy</h1>
+        <p class="text-gray-500 mb-8">Last updated: April 3, 2026</p>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+            <section>
+                <h2 class="text-xl font-bold mb-3">1. Data Processing</h2>
+                <p class="text-gray-600 leading-relaxed">All text conversion and font generation happens <strong>entirely in your browser</strong>. Your text is never sent to our servers for the font conversion process. The conversion is performed using JavaScript Unicode mapping that runs locally on your device.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">2. Local Storage</h2>
+                <p class="text-gray-600 leading-relaxed">We use your browser's localStorage to store:</p>
+                <ul class="list-disc list-inside text-gray-600 ml-4 space-y-1">
+                    <li>Font combo preferences (<code>fg_saved_combos</code>)</li>
+                    <li>Input history (<code>fg_history</code>)</li>
+                    <li>Login session data</li>
+                </ul>
+                <p class="text-gray-600 mt-2">This data never leaves your device unless you explicitly enable cloud sync (Pro feature).</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">3. Google Sign-In</h2>
+                <p class="text-gray-600 leading-relaxed">We use Google Sign-In solely for Pro membership verification. We only collect your email address and display name for account purposes. We do not access any other Google account data.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">4. No Text Collection</h2>
+                <p class="text-gray-600 leading-relaxed"><strong>We do not collect, store, or analyze any text you input into our font generator.</strong> Your input text and generated fonts remain entirely on your device.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">5. Cookies</h2>
+                <p class="text-gray-600 leading-relaxed">We use minimal cookies only for Google Sign-In authentication. No tracking cookies or third-party analytics are used.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">6. Third-Party Services</h2>
+                <p class="text-gray-600 leading-relaxed">We use the following third-party services:</p>
+                <ul class="list-disc list-inside text-gray-600 ml-4 space-y-1">
+                    <li><strong>Cloudflare Pages & Workers</strong> — Hosting and API</li>
+                    <li><strong>Google Identity Services</strong> — User authentication</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">7. Contact</h2>
+                <p class="text-gray-600 leading-relaxed">If you have questions about this privacy policy, please contact us through our website.</p>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 py-4 text-center text-gray-400 text-sm">
+        <p>© <span id="year"></span> Font Generator Free. All rights reserved.</p>
+    </footer>
+
+    <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

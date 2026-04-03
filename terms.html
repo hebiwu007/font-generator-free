@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - Font Generator Free</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm py-4 px-4">
+        <div class="container mx-auto max-w-4xl flex items-center justify-between">
+            <a href="index.html" class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Font Generator Free</a>
+            <a href="index.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">← Back to Generator</a>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 max-w-3xl py-8">
+        <h1 class="text-3xl font-bold mb-6">Terms of Service</h1>
+        <p class="text-gray-500 mb-8">Last updated: April 3, 2026</p>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+            <section>
+                <h2 class="text-xl font-bold mb-3">1. Service Description</h2>
+                <p class="text-gray-600 leading-relaxed">Font Generator Free is a web-based tool that converts text into various Unicode font styles. The service is provided "as is" without warranties of any kind.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">2. Free Usage</h2>
+                <p class="text-gray-600 leading-relaxed">The free tier includes:</p>
+                <ul class="list-disc list-inside text-gray-600 ml-4 space-y-1">
+                    <li>Unlimited text conversion with 30 font styles</li>
+                    <li>Single and Batch modes</li>
+                    <li>Up to 3 saved Font Combos</li>
+                    <li>HTML and ZIP downloads</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">3. Pro Subscription</h2>
+                <p class="text-gray-600 leading-relaxed">Pro features include PNG/PDF downloads, unlimited Combos, and cloud sync. Subscription fees are non-refundable except as required by applicable law.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">4. Acceptable Use</h2>
+                <p class="text-gray-600 leading-relaxed">You agree not to use this service for:</p>
+                <ul class="list-disc list-inside text-gray-600 ml-4 space-y-1">
+                    <li>Any illegal or harmful purposes</li>
+                    <li>Impersonating others with deceptive intent</li>
+                    <li>Spamming or harassment</li>
+                    <li>Attempting to disrupt the service</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">5. Content Rights</h2>
+                <p class="text-gray-600 leading-relaxed">You retain full ownership of all text you input. The Unicode font conversions are based on standard Unicode characters and are not proprietary to this service.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">6. Service Changes</h2>
+                <p class="text-gray-600 leading-relaxed">We reserve the right to modify, suspend, or discontinue the service at any time. We will make reasonable efforts to notify users of significant changes.</p>
+            </section>
+
+            <section>
+                <h2 class="text-xl font-bold mb-3">7. Limitation of Liability</h2>
+                <p class="text-gray-600 leading-relaxed">We are not liable for any damages arising from the use or inability to use this service. This includes, but is not limited to, data loss or rendering issues on third-party platforms.</p>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 py-4 text-center text-gray-400 text-sm">
+        <p>© <span id="year"></span> Font Generator Free. All rights reserved.</p>
+    </footer>
+
+    <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
