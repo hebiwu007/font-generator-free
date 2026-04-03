@@ -744,38 +744,27 @@ function downloadAsZIP() {
 function downloadAsImage() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
-  if (typeof html2canvas === 'undefined') { showToast('Image library not loaded'); return; }
 
   var format = getOutputFormat();
   var groups = groupResults(results, format);
 
-  // 创建临时渲染容器（在 DOM 中可见但移到屏幕外）
-  var container = document.createElement('div');
-  container.id = '_png_render_' + Date.now();
-  container.style.cssText = 'position:absolute;left:0;top:0;width:800px;padding:30px;background:#fff;z-index:99999;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans","Apple Symbols",sans-serif;';
-
-  container.innerHTML = buildRenderHTML(groups);
+  var container = createRenderContainer(groups);
   document.body.appendChild(container);
 
-  html2canvas(container, {
-    backgroundColor: '#ffffff',
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    width: 800,
-    windowWidth: 800
-  }).then(function(canvas) {
-    document.body.removeChild(container);
-    var link = document.createElement('a');
-    link.download = 'font-results-' + Date.now() + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('PNG downloaded!');
-  }).catch(function(err) {
-    if (document.getElementById(container.id)) document.body.removeChild(container);
-    console.error('PNG error:', err);
-    showToast('PNG download failed');
-  });
+  htmlToImage.toPng(container, { backgroundColor: '#ffffff', pixelRatio: 2 })
+    .then(function(dataUrl) {
+      document.body.removeChild(container);
+      var link = document.createElement('a');
+      link.download = 'font-results-' + Date.now() + '.png';
+      link.href = dataUrl;
+      link.click();
+      showToast('PNG downloaded!');
+    })
+    .catch(function(err) {
+      if (container.parentNode) document.body.removeChild(container);
+      console.error('PNG error:', err);
+      showToast('PNG download failed');
+    });
 }
 
 // 📕 PDF 下载
@@ -785,61 +774,69 @@ function downloadAsPDF() {
 
   var jsPDFConstructor = (typeof jspdf !== 'undefined' && jspdf.jsPDF) ? jspdf.jsPDF : (typeof jsPDF !== 'undefined' ? jsPDF : null);
   if (!jsPDFConstructor) { showToast('PDF library not loaded'); return; }
-  if (typeof html2canvas === 'undefined') { showToast('Image library not loaded'); return; }
 
   var format = getOutputFormat();
   var groups = groupResults(results, format);
 
-  var container = document.createElement('div');
-  container.id = '_pdf_render_' + Date.now();
-  container.style.cssText = 'position:absolute;left:0;top:0;width:800px;padding:30px;background:#fff;z-index:99999;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans","Apple Symbols",sans-serif;';
-
-  container.innerHTML = buildRenderHTML(groups);
+  var container = createRenderContainer(groups);
   document.body.appendChild(container);
 
-  html2canvas(container, {
-    backgroundColor: '#ffffff',
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    width: 800,
-    windowWidth: 800
-  }).then(function(canvas) {
-    document.body.removeChild(container);
+  htmlToImage.toPng(container, { backgroundColor: '#ffffff', pixelRatio: 2 })
+    .then(function(dataUrl) {
+      document.body.removeChild(container);
 
-    var doc = new jsPDFConstructor();
-    var pdfWidth = doc.internal.pageSize.getWidth();
-    var pdfHeight = doc.internal.pageSize.getHeight();
-    var imgWidth = pdfWidth - 20;
-    var imgHeight = (canvas.height / canvas.width) * imgWidth;
+      var doc = new jsPDFConstructor();
+      var pdfWidth = doc.internal.pageSize.getWidth();
+      var pdfHeight = doc.internal.pageSize.getHeight();
+      var imgWidth = pdfWidth - 20;
 
-    if (imgHeight <= pdfHeight - 20) {
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, imgHeight);
-    } else {
-      var pageImgHeight = (pdfHeight - 20) / imgWidth * canvas.width;
-      var remaining = canvas.height;
-      var srcY = 0;
-      var page = 0;
-      while (remaining > 0) {
-        if (page > 0) doc.addPage();
-        var sliceHeight = Math.min(remaining, pageImgHeight);
-        var pageCanvas = document.createElement('canvas');
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = sliceHeight;
-        pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
-        doc.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, (sliceHeight / canvas.width) * imgWidth);
-        srcY += sliceHeight;
-        remaining -= sliceHeight;
-        page++;
-      }
-    }
-    doc.save('font-results-' + Date.now() + '.pdf');
-    showToast('PDF downloaded!');
-  }).catch(function(err) {
-    if (document.getElementById(container.id)) document.body.removeChild(container);
-    console.error('PDF error:', err);
-    showToast('PDF download failed');
-  });
+      // 加载图片获取尺寸
+      var img = new Image();
+      img.onload = function() {
+        var imgHeight = (img.height / img.width) * imgWidth;
+
+        if (imgHeight <= pdfHeight - 20) {
+          doc.addImage(dataUrl, 'PNG', 10, 10, imgWidth, imgHeight);
+        } else {
+          // 分页处理
+          var ratio = img.width / imgWidth;
+          var pagePdfHeight = pdfHeight - 20;
+          var pageSrcHeight = pagePdfHeight * ratio;
+          var srcY = 0;
+          var page = 0;
+
+          while (srcY < img.height) {
+            if (page > 0) doc.addPage();
+            var sliceH = Math.min(pageSrcHeight, img.height - srcY);
+
+            var c = document.createElement('canvas');
+            c.width = img.width;
+            c.height = sliceH;
+            c.getContext('2d').drawImage(img, 0, srcY, img.width, sliceH, 0, 0, img.width, sliceH);
+
+            doc.addImage(c.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, (sliceH / img.width) * imgWidth);
+            srcY += sliceH;
+            page++;
+          }
+        }
+        doc.save('font-results-' + Date.now() + '.pdf');
+        showToast('PDF downloaded!');
+      };
+      img.src = dataUrl;
+    })
+    .catch(function(err) {
+      if (container.parentNode) document.body.removeChild(container);
+      console.error('PDF error:', err);
+      showToast('PDF download failed');
+    });
+}
+
+// 创建临时渲染容器
+function createRenderContainer(groups) {
+  var container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:0;top:0;width:800px;padding:30px;background:#fff;z-index:99999;font-family:"Segoe UI Symbol","Noto Sans","Noto Sans Symbols 2","DejaVu Sans","Apple Symbols",system-ui,sans-serif;color:#1e40af;';
+  container.innerHTML = buildRenderHTML(groups);
+  return container;
 }
 
 // 构建渲染用 HTML
