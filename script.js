@@ -152,12 +152,16 @@ function switchMode(mode) {
     document.getElementById('section-single').classList.remove('hidden');
     document.getElementById('section-batch').classList.add('hidden');
   } else {
+    // Batch 模式 — 免费用户可查看但限制功能
     batchTab.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
     batchTab.classList.remove('text-gray-600');
     singleTab.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
     singleTab.classList.add('text-gray-600');
     document.getElementById('section-batch').classList.remove('hidden');
     document.getElementById('section-single').classList.add('hidden');
+
+    // 显示/隐藏 Batch 功能限制提示
+    updateBatchPermissionUI();
   }
 }
 
@@ -270,6 +274,7 @@ function getHistory() {
 }
 
 function saveToHistory(text) {
+  if (!isProUser()) return; // 历史记录仅 Pro 用户
   if (!text || !text.trim()) return;
   var history = getHistory();
   // 去重：如果已存在则移到最前面
@@ -322,6 +327,10 @@ function renderHistory() {
 }
 
 function toggleHistoryPanel() {
+  if (!isProUser()) {
+    checkProAndShowUpgrade('History');
+    return;
+  }
   var panel = document.getElementById('history-panel');
   if (!panel) return;
   if (panel.classList.contains('hidden')) {
@@ -601,6 +610,7 @@ function escapeHtml(text) {
 var PREVIEW_LIMIT = 10; // 预览默认显示条数
 
 function batchConvert() {
+  if (!checkProAndShowUpgrade('Batch Conversion')) return;
   // 收集粘贴的文本
   var batchText = document.getElementById('batch-text');
   if (batchText && batchText.value.trim()) {
@@ -1206,5 +1216,39 @@ function updateProUI() {
     badge.style.display = 'inline-block';
     badge.textContent = '⭐ Pro';
     badge.className = 'text-xs bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-1 rounded-full font-semibold';
+  }
+  // 更新 Batch 权限 UI
+  updateBatchPermissionUI();
+  // 历史记录按钮状态
+  var histBtn = document.getElementById('history-btn');
+  if (histBtn) {
+    if (isPro) {
+      histBtn.classList.remove('opacity-50');
+      histBtn.removeAttribute('title');
+    } else {
+      histBtn.classList.add('opacity-50');
+      histBtn.setAttribute('title', 'History is a Pro feature');
+    }
+  }
+}
+
+function updateBatchPermissionUI() {
+  if (currentMode !== 'batch') return;
+  var isPro = isProUser();
+  var convertBtn = document.getElementById('convert-btn');
+  var batchOverlay = document.getElementById('batch-pro-overlay');
+
+  if (convertBtn) {
+    if (isPro) {
+      convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      convertBtn.removeAttribute('disabled');
+    } else {
+      convertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      convertBtn.setAttribute('disabled', 'disabled');
+    }
+  }
+
+  if (batchOverlay) {
+    batchOverlay.style.display = isPro ? 'none' : 'flex';
   }
 }

@@ -73,7 +73,17 @@
         </div>
 
         <!-- ==================== BATCH MODE ==================== -->
-        <div id="section-batch" class="hidden">
+        <div id="section-batch" class="hidden relative">
+
+            <!-- Batch Pro Overlay (免费用户可见但限制操作) -->
+            <div id="batch-pro-overlay" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-40 flex items-center justify-center rounded-2xl" style="display:none">
+                <div class="text-center p-6">
+                    <div class="text-4xl mb-3">📦</div>
+                    <h3 class="text-xl font-bold mb-2">Batch Mode Preview</h3>
+                    <p class="text-gray-500 text-sm mb-4">You can browse Batch mode, but conversion requires Pro.</p>
+                    <a href="pricing.html" class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-bold hover:opacity-90 transition text-sm">⭐ Upgrade to Pro</a>
+                </div>
+            </div>
 
             <!-- Step 1: Input -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
