@@ -1,2 +1,3 @@
 node_modules/\n.DS_Store\ntest-results/\n*.last-run.json\nfix-reverse-map.py
 node_modules/
+worker/

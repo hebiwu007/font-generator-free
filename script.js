@@ -862,9 +862,10 @@ function isProUser() {
   try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
   if (!session || !session.user) return false;
   
-  // 检查后端 membershipStatus
+  // 1. 检查后端 Pro 状态（auth.js 登录时从后端验证并缓存）
   if (window.membershipStatus && window.membershipStatus.isPro) return true;
-  // 检查 localStorage 本地 Pro 状态（沙箱/支付成功后标记）
+  
+  // 2. 检查 localStorage Pro 状态（支付成功后标记 + 后端验证缓存）
   try {
     var proData = JSON.parse(localStorage.getItem('fg_pro_status'));
     if (proData && proData.status === 'pro') return true;

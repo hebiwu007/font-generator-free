@@ -115,11 +115,39 @@ window.handleCredentialResponse = function (response) {
     fg_saveSession(user, response.credential);
     fg_showUser(user);
     fg_toast('Welcome, ' + (user.name || user.email) + '! 🎉');
+    // 从后端检查 Pro 状态
+    checkProFromBackend(user.sub);
     // 同步用户到后端
     if (typeof syncUserToBackend === 'function') {
         syncUserToBackend(user, response.credential);
     }
 };
+
+// 从后端 D1 数据库检查 Pro 状态
+function checkProFromBackend(googleSub) {
+    fetch('https://font-generator-api.hebiwu007.workers.dev/api/pro/check?google_sub=' + encodeURIComponent(googleSub))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success && d.isPro) {
+                // 后端确认是 Pro，更新本地状态
+                var proData = {
+                    status: 'pro',
+                    plan: d.plan,
+                    purchasedAt: d.purchasedAt,
+                    source: 'backend'
+                };
+                localStorage.setItem('fg_pro_status', JSON.stringify(proData));
+                if (window.membershipStatus) window.membershipStatus.isPro = true;
+                if (typeof updateProUI === 'function') updateProUI();
+                console.log('[Auth] Pro status verified from backend:', d);
+            } else {
+                console.log('[Auth] User is not Pro (backend check)');
+            }
+        })
+        .catch(function(e) {
+            console.error('[Auth] Failed to check Pro status:', e);
+        });
+}
 
 // ─── 退出登录 ─────────────────────────────────────────────────────────────────
 
@@ -171,6 +199,10 @@ function fg_init() {
     if (session) {
         console.log('[Auth] Existing session found:', session.user.email);
         fg_showUser(session.user);
+        // 检查后端 Pro 状态
+        if (session.user && session.user.sub) {
+            checkProFromBackend(session.user.sub);
+        }
         return;
     }
 

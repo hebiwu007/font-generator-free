@@ -225,11 +225,27 @@
                             };
                             localStorage.setItem('fg_pro_status', JSON.stringify(proData));
                             
-                            // 同时保存到 sessionStorage 供当前会话使用
+                            // 保存到后端 D1 数据库（绑定 Google 账号）
                             try {
-                                var sessionData = JSON.parse(sessionStorage.getItem('fg_user_session'));
-                                if (sessionData && sessionData.user) {
-                                    sessionStorage.setItem('fg_pro_session', JSON.stringify({ isPro: true, plan: planType, email: sessionData.user.email }));
+                                var session = JSON.parse(sessionStorage.getItem('fg_user_session'));
+                                if (session && session.user) {
+                                    fetch('https://font-generator-api.hebiwu007.workers.dev/api/pro/save', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            google_sub: session.user.sub,
+                                            email: session.user.email,
+                                            name: session.user.name,
+                                            plan: planType,
+                                            order_id: orderId,
+                                            amount: amount,
+                                            paypal_email: details.payer.email_address
+                                        })
+                                    }).then(function(r) { return r.json(); }).then(function(d) {
+                                        console.log('Pro saved to backend:', d);
+                                    }).catch(function(e) {
+                                        console.error('Failed to save Pro to backend:', e);
+                                    });
                                 }
                             } catch(e) {}
                             
