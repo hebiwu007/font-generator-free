@@ -73,6 +73,10 @@
                     <li>✅ Priority support</li>
                 </ul>
                 <div class="mt-auto" id="paypal-button-monthly"></div>
+                <div id="login-msg-monthly" class="mt-auto text-center py-4">
+                    <p class="text-gray-500 text-sm mb-3">🔒 Please sign in first to purchase</p>
+                    <a href="index.html" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">Sign in with Google →</a>
+                </div>
             </div>
 
             <!-- Pro Lifetime -->
@@ -91,6 +95,10 @@
                     <li>✅ Future Pro updates included</li>
                 </ul>
                 <div class="mt-auto" id="paypal-button-lifetime"></div>
+                <div id="login-msg-lifetime" class="mt-auto text-center py-4">
+                    <p class="text-gray-500 text-sm mb-3">🔒 Please sign in first to purchase</p>
+                    <a href="index.html" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">Sign in with Google →</a>
+                </div>
             </div>
         </section>
 
@@ -135,14 +143,37 @@
     <script src="https://www.paypal.com/sdk/js?client-id=AWuiooLQ44pl54cf6yGeZa-3p7O-S5uXf4W1Hvg01liPaZ5tFIxYkfetc1_Mih9zNtf9n-pLkYnkEYVJ&currency=USD&intent=capture"></script>
     
     <script>
+        // 检查登录状态
+        function checkLoginForPayment() {
+            var session = null;
+            try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+            var isLogged = !!(session && session.user);
+            
+            var loginMsgMonthly = document.getElementById('login-msg-monthly');
+            var loginMsgLifetime = document.getElementById('login-msg-lifetime');
+            var btnMonthly = document.getElementById('paypal-button-monthly');
+            var btnLifetime = document.getElementById('paypal-button-lifetime');
+            
+            if (isLogged) {
+                if (loginMsgMonthly) loginMsgMonthly.style.display = 'none';
+                if (loginMsgLifetime) loginMsgLifetime.style.display = 'none';
+                if (btnMonthly) btnMonthly.style.display = '';
+                if (btnLifetime) btnLifetime.style.display = '';
+                initPayPal();
+            } else {
+                if (loginMsgMonthly) loginMsgMonthly.style.display = '';
+                if (loginMsgLifetime) loginMsgLifetime.style.display = '';
+                if (btnMonthly) btnMonthly.style.display = 'none';
+                if (btnLifetime) btnLifetime.style.display = 'none';
+            }
+        }
+
         // 等待 PayPal SDK 加载后初始化按钮
         function initPayPal() {
             if (typeof paypal === 'undefined') {
                 setTimeout(initPayPal, 300);
                 return;
             }
-            
-            // 初始化两个按钮
             initButton('monthly', 'blue');
             initButton('lifetime', 'gold');
         }
@@ -234,9 +265,9 @@
         
         // 页面加载后初始化
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initPayPal);
+            document.addEventListener('DOMContentLoaded', checkLoginForPayment);
         } else {
-            initPayPal();
+            checkLoginForPayment();
         }
 
         // 显示当前 Pro 状态

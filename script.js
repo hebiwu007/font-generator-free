@@ -1251,6 +1251,26 @@ function updateProUI() {
   tags.forEach(function(tag) {
     tag.style.display = isPro ? 'none' : 'inline';
   });
+  // Combos 和 History 导航链接状态
+  var combosLink = document.getElementById('nav-combos');
+  var historyLink = document.getElementById('nav-history');
+  if (combosLink) {
+    if (isPro) {
+      combosLink.className = 'text-sm text-blue-600 font-semibold hover:text-blue-700 transition';
+      combosLink.onclick = null;
+    } else {
+      combosLink.className = 'text-sm text-gray-400 font-semibold cursor-pointer transition hover:text-gray-600';
+      combosLink.href = 'javascript:void(0)';
+      combosLink.onclick = function() { checkProAndShowUpgrade('Combos'); };
+    }
+  }
+  if (historyLink) {
+    if (isPro) {
+      historyLink.className = 'text-sm text-blue-600 font-semibold hover:text-blue-700 transition';
+    } else {
+      historyLink.className = 'text-sm text-gray-400 font-semibold cursor-pointer transition hover:text-gray-600';
+    }
+  }
   // 更新 Batch 权限 UI
   updateBatchPermissionUI();
   // 历史记录按钮状态
