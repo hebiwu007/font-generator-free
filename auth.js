@@ -62,10 +62,20 @@ function fg_showUser(user) {
     var info = document.getElementById('auth-user-info');
     var nameEl = document.getElementById('auth-user-name');
     var avatarEl = document.getElementById('auth-user-avatar');
+    var initialEl = document.getElementById('auth-user-initial');
     if (btn) btn.style.display = 'none';
     if (info) info.style.display = 'flex';
     if (nameEl) nameEl.textContent = user.name || user.email || '';
-    if (avatarEl && user.picture) { avatarEl.src = user.picture; avatarEl.alt = user.name || 'User'; }
+    if (avatarEl && user.picture) {
+        avatarEl.src = user.picture;
+        avatarEl.alt = user.name || 'User';
+        avatarEl.classList.remove('hidden');
+        if (initialEl) initialEl.classList.add('hidden');
+    } else if (initialEl) {
+        // 显示首字母
+        var name = user.name || user.email || '?';
+        initialEl.textContent = name.charAt(0).toUpperCase();
+    }
 }
 
 // ─── Toast ───────────────────────────────────────────────────────────────────

@@ -31,7 +31,10 @@
                 <span id="plan-badge" class="text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600">Free</span>
                 <div id="auth-login-btn"></div>
                 <div id="auth-user-info" class="hidden items-center gap-2">
-                    <img id="auth-user-avatar" src="" alt="" class="w-8 h-8 rounded-full border-2 border-blue-200">
+                    <div id="auth-user-avatar-wrap" class="w-8 h-8 rounded-full border-2 border-blue-200 bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold overflow-hidden">
+                        <span id="auth-user-initial">?</span>
+                        <img id="auth-user-avatar" src="" alt="" class="w-full h-full object-cover hidden">
+                    </div>
                     <span id="auth-user-name" class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
                     <button onclick="signOut()" class="text-xs bg-gray-100 text-gray-500 hover:text-red-500 hover:bg-red-50 px-2 py-1 rounded transition">Sign out</button>
                 </div>
