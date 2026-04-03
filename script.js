@@ -744,16 +744,38 @@ function downloadAsZIP() {
 function downloadAsImage() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
+  if (typeof html2canvas === 'undefined') { showToast('Image library not loaded'); return; }
 
   var format = getOutputFormat();
   var groups = groupResults(results, format);
 
-  // 构建 HTML 页面在新窗口打开
-  var html = buildExportHTML(groups, 'image');
-  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  var url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  showToast('Opened in new tab - Ctrl+S or right-click to save');
+  // 创建临时渲染容器（在 DOM 中可见但移到屏幕外）
+  var container = document.createElement('div');
+  container.id = '_png_render_' + Date.now();
+  container.style.cssText = 'position:absolute;left:0;top:0;width:800px;padding:30px;background:#fff;z-index:99999;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans","Apple Symbols",sans-serif;';
+
+  container.innerHTML = buildRenderHTML(groups);
+  document.body.appendChild(container);
+
+  html2canvas(container, {
+    backgroundColor: '#ffffff',
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    width: 800,
+    windowWidth: 800
+  }).then(function(canvas) {
+    document.body.removeChild(container);
+    var link = document.createElement('a');
+    link.download = 'font-results-' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('PNG downloaded!');
+  }).catch(function(err) {
+    if (document.getElementById(container.id)) document.body.removeChild(container);
+    console.error('PNG error:', err);
+    showToast('PNG download failed');
+  });
 }
 
 // 📕 PDF 下载
@@ -761,48 +783,76 @@ function downloadAsPDF() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
 
+  var jsPDFConstructor = (typeof jspdf !== 'undefined' && jspdf.jsPDF) ? jspdf.jsPDF : (typeof jsPDF !== 'undefined' ? jsPDF : null);
+  if (!jsPDFConstructor) { showToast('PDF library not loaded'); return; }
+  if (typeof html2canvas === 'undefined') { showToast('Image library not loaded'); return; }
+
   var format = getOutputFormat();
   var groups = groupResults(results, format);
 
-  var html = buildExportHTML(groups, 'pdf');
-  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  var url = URL.createObjectURL(blob);
-  var w = window.open(url, '_blank');
-  if (w) {
-    w.onload = function() {
-      setTimeout(function() { w.print(); }, 600);
-    };
-  }
-  showToast('Print dialog opened - choose Save as PDF');
+  var container = document.createElement('div');
+  container.id = '_pdf_render_' + Date.now();
+  container.style.cssText = 'position:absolute;left:0;top:0;width:800px;padding:30px;background:#fff;z-index:99999;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans","Apple Symbols",sans-serif;';
+
+  container.innerHTML = buildRenderHTML(groups);
+  document.body.appendChild(container);
+
+  html2canvas(container, {
+    backgroundColor: '#ffffff',
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    width: 800,
+    windowWidth: 800
+  }).then(function(canvas) {
+    document.body.removeChild(container);
+
+    var doc = new jsPDFConstructor();
+    var pdfWidth = doc.internal.pageSize.getWidth();
+    var pdfHeight = doc.internal.pageSize.getHeight();
+    var imgWidth = pdfWidth - 20;
+    var imgHeight = (canvas.height / canvas.width) * imgWidth;
+
+    if (imgHeight <= pdfHeight - 20) {
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, imgHeight);
+    } else {
+      var pageImgHeight = (pdfHeight - 20) / imgWidth * canvas.width;
+      var remaining = canvas.height;
+      var srcY = 0;
+      var page = 0;
+      while (remaining > 0) {
+        if (page > 0) doc.addPage();
+        var sliceHeight = Math.min(remaining, pageImgHeight);
+        var pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sliceHeight;
+        pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+        doc.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, (sliceHeight / canvas.width) * imgWidth);
+        srcY += sliceHeight;
+        remaining -= sliceHeight;
+        page++;
+      }
+    }
+    doc.save('font-results-' + Date.now() + '.pdf');
+    showToast('PDF downloaded!');
+  }).catch(function(err) {
+    if (document.getElementById(container.id)) document.body.removeChild(container);
+    console.error('PDF error:', err);
+    showToast('PDF download failed');
+  });
 }
 
-// 构建导出用 HTML 页面
-function buildExportHTML(groups, mode) {
-  var s = [];
-  s.push('<!DOCTYPE html><html><head><meta charset="utf-8">');
-  s.push('<title>Font Generator Results</title>');
-  s.push('<style>');
-  s.push('@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap");');
-  s.push('*{margin:0;padding:0;box-sizing:border-box;}');
-  s.push('body{font-family:"Noto Sans","Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",sans-serif;padding:30px;background:#fff;color:#1e40af;line-height:1.8;}');
-  s.push('.main-title{font-size:22px;font-weight:bold;margin-bottom:24px;}');
-  s.push('.group-title{font-size:14px;font-weight:bold;color:#374151;margin-top:16px;margin-bottom:8px;border-bottom:2px solid #e5e7eb;padding-bottom:4px;}');
-  s.push('.result-line{font-size:16px;padding:4px 0 4px 16px;white-space:pre-wrap;word-break:break-all;}');
-  s.push('.watermark{font-size:11px;color:#9ca3af;margin-top:24px;padding-top:12px;border-top:1px solid #eee;}');
-  if (mode === 'pdf') {
-    s.push('@media print{body{padding:15mm;}.no-print{display:none;}}');
-  }
-  s.push('</style></head><body>');
-  s.push('<div class="main-title">Font Generator Results</div>');
+// 构建渲染用 HTML
+function buildRenderHTML(groups) {
+  var html = '<div style="font-size:20px;font-weight:bold;color:#1e40af;margin-bottom:20px;">Font Generator Results</div>';
   groups.forEach(function(group) {
-    s.push('<div class="group-title">── ' + escapeHtml(group.title) + ' ──</div>');
+    html += '<div style="font-size:14px;font-weight:bold;color:#374151;margin-top:14px;margin-bottom:6px;border-bottom:2px solid #e5e7eb;padding-bottom:4px;">── ' + escapeHtml(group.title) + ' ──</div>';
     group.items.forEach(function(r) {
-      s.push('<div class="result-line">' + escapeHtml(r.output) + '</div>');
+      html += '<div style="font-size:16px;color:#1e40af;padding:3px 0 3px 12px;white-space:pre-wrap;word-break:break-all;line-height:1.8;">' + escapeHtml(r.output) + '</div>';
     });
   });
-  s.push('<div class="watermark">Generated by Font Generator Free</div>');
-  s.push('</body></html>');
-  return s.join('');
+  html += '<div style="font-size:11px;color:#9ca3af;margin-top:16px;">Generated by Font Generator Free</div>';
+  return html;
 }
 
 function downloadFile(filename, content, mimeType) {
