@@ -18,6 +18,7 @@
                 Font Generator Free
             </a>
             <a href="index.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">← Back to Generator</a>
+            <span id="pricing-plan-badge" class="text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600"></span>
         </div>
     </header>
 
@@ -179,8 +180,30 @@
                             var payerName = details.payer.name.given_name;
                             var orderId = details.id;
                             var amount = details.purchase_units[0].amount.value;
-                            alert('Payment successful!\n\nThank you, ' + payerName + '!\nOrder ID: ' + orderId + '\nAmount: $' + amount);
+                            var planType = plan === 'monthly' ? 'monthly' : 'lifetime';
+                            
+                            // 保存 Pro 状态到 localStorage
+                            var proData = {
+                                status: 'pro',
+                                plan: planType,
+                                orderId: orderId,
+                                amount: amount,
+                                payerEmail: details.payer.email_address,
+                                payerName: payerName,
+                                purchasedAt: new Date().toISOString()
+                            };
+                            localStorage.setItem('fg_pro_status', JSON.stringify(proData));
+                            
+                            // 更新全局 membershipStatus
+                            if (window.membershipStatus) {
+                                window.membershipStatus.isPro = true;
+                            }
+                            
                             console.log('Payment captured:', details);
+                            
+                            // 显示成功提示并跳转
+                            alert('🎉 Payment successful!\n\nThank you, ' + payerName + '!\nPlan: Pro ' + planType + '\nOrder ID: ' + orderId + '\n\nRedirecting to main page...');
+                            window.location.href = 'index.html?payment=success&plan=' + planType;
                         });
                     },
                     onError: function(err) {
@@ -207,6 +230,24 @@
         } else {
             initPayPal();
         }
+
+        // 显示当前 Pro 状态
+        (function() {
+            var badge = document.getElementById('pricing-plan-badge');
+            if (!badge) return;
+            try {
+                var proData = JSON.parse(localStorage.getItem('fg_pro_status'));
+                if (proData && proData.status === 'pro') {
+                    badge.textContent = '⭐ Current plan: Pro (' + proData.plan + ')';
+                    badge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white';
+                } else {
+                    badge.textContent = 'Current plan: Free';
+                    badge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600';
+                }
+            } catch(e) {
+                badge.textContent = 'Current plan: Free';
+            }
+        })();
     </script>
 </body>
 </html>

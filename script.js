@@ -857,7 +857,14 @@ function downloadAsZIP() {
 var FREE_COMBO_LIMIT = 3;
 
 function isProUser() {
-  return !!(window.membershipStatus && window.membershipStatus.isPro);
+  // 检查后端 membershipStatus
+  if (window.membershipStatus && window.membershipStatus.isPro) return true;
+  // 检查 localStorage 本地 Pro 状态（沙箱/支付成功后标记）
+  try {
+    var proData = JSON.parse(localStorage.getItem('fg_pro_status'));
+    if (proData && proData.status === 'pro') return true;
+  } catch (e) {}
+  return false;
 }
 
 function checkProAndShowUpgrade(featureName) {
@@ -1195,11 +1202,23 @@ document.addEventListener('DOMContentLoaded', function() {
   initBatchFontModeHandlers();
   renderHistory();
   updateProUI();
+  checkPaymentSuccess();
 
   // 自动聚焦输入框
   var singleInput = document.getElementById('input-single');
   if (singleInput) singleInput.focus();
 });
+
+// 检查支付成功回调
+function checkPaymentSuccess() {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('payment') === 'success') {
+    // 清除 URL 参数
+    window.history.replaceState({}, '', 'index.html');
+    // 显示成功提示
+    showToast('🎉 Welcome to Pro! All features unlocked.');
+  }
+}
 
 // ==================== Pro UI 更新 ====================
 
