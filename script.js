@@ -502,13 +502,14 @@ function escapeHtml(text) {
 
 // ==================== Batch 模式 - 转换 ====================
 
+var PREVIEW_LIMIT = 10; // 预览默认显示条数
+
 function batchConvert() {
-  // 收集输入文本
+  // 收集粘贴的文本
   var batchText = document.getElementById('batch-text');
   if (batchText && batchText.value.trim()) {
     var lines = batchText.value.split('\n').filter(function(l) { return l.trim(); });
     lines.forEach(function(line) {
-      // 避免重复添加
       var exists = batchInputTexts.some(function(item) { return item.text === line.trim() && item.source === 'paste'; });
       if (!exists) {
         batchInputTexts.push({ source: 'paste', text: line.trim() });
@@ -523,11 +524,11 @@ function batchConvert() {
     return;
   }
 
-  // 确定字体模式
+  // 确定字体
   var fontModeEl = document.querySelector('input[name="font-mode"]:checked');
   var fontMode = fontModeEl ? fontModeEl.value : 'multiple';
-
   var fonts = [];
+
   if (fontMode === 'single') {
     var singleFont = document.getElementById('single-font-select').value;
     if (!singleFont) { showToast('Please select a font'); return; }
@@ -536,9 +537,8 @@ function batchConvert() {
     var comboName = document.getElementById('combo-select').value;
     if (!comboName) { showToast('Please select a combo'); return; }
     fonts = getComboFonts(comboName);
-    if (fonts.length === 0) { showToast('Combo not found. Create one in Combos page first.'); return; }
+    if (fonts.length === 0) { showToast('Combo not found. Create one first.'); return; }
   } else {
-    // multiple - 使用已选字体
     fonts = selectedFonts.slice();
     if (fonts.length === 0) { showToast('Please select at least one font'); return; }
   }
@@ -547,62 +547,78 @@ function batchConvert() {
   var allResults = [];
   batchInputTexts.forEach(function(item) {
     fonts.forEach(function(fontName) {
-      var converted = convertText(item.text, fontName);
       allResults.push({
         source: item.source,
         font: fontName,
         input: item.text,
-        output: converted
+        output: convertText(item.text, fontName)
       });
     });
   });
 
-  // 显示预览
-  var previewArea = document.getElementById('preview-area');
-  var previewContent = document.getElementById('preview-content');
-  var resultCount = document.getElementById('result-count');
-  var downloadArea = document.getElementById('download-area');
+  window._batchResults = allResults;
 
+  // 预览
+  var previewArea = document.getElementById('preview-area');
+  var downloadArea = document.getElementById('download-area');
   if (previewArea) previewArea.classList.remove('hidden');
   if (downloadArea) downloadArea.classList.remove('hidden');
-  if (resultCount) resultCount.textContent = allResults.length;
 
-  // 生成预览
-  var previewHtml = '';
-  allResults.forEach(function(r) {
-    previewHtml += '<div class="border-b border-gray-200 py-1">' +
-      '<span class="text-blue-600 font-medium">[' + r.font + ']</span> ' +
-      '<span class="text-gray-500 text-xs">(' + r.source + ')</span> ' +
-      '<span class="ml-1">' + escapeHtml(r.output) + '</span>' +
-    '</div>';
-  });
-  if (previewContent) previewContent.innerHTML = previewHtml;
+  document.getElementById('result-count').textContent = allResults.length;
+  renderPreview(allResults, false);
 
-  // 保存结果供下载使用
-  window._batchResults = allResults;
   showToast('Converted ' + allResults.length + ' results!');
 }
 
-// ==================== Batch 模式 - 下载 ====================
+function renderPreview(results, showAll) {
+  var content = document.getElementById('preview-content');
+  var moreDiv = document.getElementById('preview-more');
+  if (!content) return;
 
-function downloadResults() {
-  var results = window._batchResults;
-  if (!results || !results.length) { showToast('No results to download'); return; }
+  var displayCount = showAll ? results.length : Math.min(PREVIEW_LIMIT, results.length);
+  var html = '';
 
-  var outputFormat = document.querySelector('input[name="output-format"]:checked');
-  var format = outputFormat ? outputFormat.value : 'merged';
-
-  if (format === 'zip') {
-    downloadAsZip(results);
-    return;
+  for (var i = 0; i < displayCount; i++) {
+    var r = results[i];
+    html += '<div class="flex items-center gap-2 py-1.5 border-b border-gray-100">' +
+      '<span class="text-gray-400 text-xs w-6 shrink-0">' + (i + 1) + '</span>' +
+      '<span class="text-xs text-gray-400 w-20 shrink-0 truncate">' + escapeHtml(r.font) + '</span>' +
+      '<span class="text-blue-700 text-sm truncate flex-1">' + escapeHtml(r.output) + '</span>' +
+    '</div>';
   }
+  content.innerHTML = html;
 
+  // Show more
+  if (results.length > PREVIEW_LIMIT) {
+    if (moreDiv) {
+      moreDiv.classList.remove('hidden');
+      document.getElementById('preview-showing').textContent = displayCount;
+      document.getElementById('preview-total').textContent = results.length;
+    }
+  } else {
+    if (moreDiv) moreDiv.classList.add('hidden');
+  }
+}
+
+function showAllPreview() {
+  if (window._batchResults) renderPreview(window._batchResults, true);
+}
+
+// ==================== Batch 模式 - 内容生成工具 ====================
+
+// 获取 Output Format
+function getOutputFormat() {
+  var el = document.querySelector('input[name="output-format"]:checked');
+  return el ? el.value : 'merged';
+}
+
+// 按 Output Format 生成纯文本内容（每行只有转换后的文本，不加前缀）
+function generateTXTContent(results, format) {
   var content = '';
   if (format === 'merged') {
     results.forEach(function(r) {
-      content += '[' + r.font + '] (' + r.source + ')\n' + r.output + '\n\n';
+      content += r.output + '\n';
     });
-    downloadFile('font-results.txt', content, 'text/plain');
   } else if (format === 'byFont') {
     var byFont = {};
     results.forEach(function(r) {
@@ -610,11 +626,10 @@ function downloadResults() {
       byFont[r.font].push(r);
     });
     Object.keys(byFont).forEach(function(font) {
-      content += '=== ' + font + ' ===\n';
+      content += '── ' + font + ' ──\n';
       byFont[font].forEach(function(r) { content += r.output + '\n'; });
       content += '\n';
     });
-    downloadFile('font-results-by-font.txt', content, 'text/plain');
   } else if (format === 'bySource') {
     var bySource = {};
     results.forEach(function(r) {
@@ -622,100 +637,153 @@ function downloadResults() {
       bySource[r.source].push(r);
     });
     Object.keys(bySource).forEach(function(source) {
-      content += '=== ' + source + ' ===\n';
-      bySource[source].forEach(function(r) { content += '[' + r.font + '] ' + r.output + '\n'; });
+      content += '── ' + source + ' ──\n';
+      bySource[source].forEach(function(r) { content += r.output + '\n'; });
       content += '\n';
     });
-    downloadFile('font-results-by-source.txt', content, 'text/plain');
   }
+  return content;
 }
 
-function downloadAsZip(results) {
-  if (typeof JSZip === 'undefined') {
-    showToast('JSZip not loaded, downloading as TXT');
-    downloadFile('font-results.txt', results.map(function(r) { return '[' + r.font + '] ' + r.output; }).join('\n'), 'text/plain');
-    return;
+// 按 Output Format 分组（用于 ZIP/PNG/PDF）
+function groupResults(results, format) {
+  if (format === 'merged') {
+    return [{ title: 'All Results', items: results }];
+  } else if (format === 'byFont') {
+    var groups = {};
+    results.forEach(function(r) {
+      if (!groups[r.font]) groups[r.font] = [];
+      groups[r.font].push(r);
+    });
+    return Object.keys(groups).map(function(k) { return { title: k, items: groups[k] }; });
+  } else if (format === 'bySource') {
+    var groups2 = {};
+    results.forEach(function(r) {
+      if (!groups2[r.source]) groups2[r.source] = [];
+      groups2[r.source].push(r);
+    });
+    return Object.keys(groups2).map(function(k) { return { title: k, items: groups2[k] }; });
   }
+  return [{ title: 'Results', items: results }];
+}
+
+// ==================== Batch 模式 - 下载 ====================
+
+// 📄 TXT 下载
+function downloadAsTXT() {
+  var results = window._batchResults;
+  if (!results || !results.length) { showToast('No results'); return; }
+  var format = getOutputFormat();
+  var content = generateTXTContent(results, format);
+  downloadFile('font-results.txt', content, 'text/plain');
+  showToast('TXT downloaded!');
+}
+
+// 📁 ZIP 下载（按 Output Format 决定文件结构）
+function downloadAsZIP() {
+  var results = window._batchResults;
+  if (!results || !results.length) { showToast('No results'); return; }
+  if (typeof JSZip === 'undefined') { showToast('ZIP library not loaded'); return; }
+
+  var format = getOutputFormat();
   var zip = new JSZip();
-  results.forEach(function(r, i) {
-    zip.file('result-' + (i + 1) + '-' + r.font + '.txt', r.output);
-  });
+
+  if (format === 'merged') {
+    // Merged: 一个文件包含所有结果
+    zip.file('all-results.txt', generateTXTContent(results, 'merged'));
+  } else if (format === 'byFont') {
+    // By Font: 每种字体一个文件
+    var byFont = {};
+    results.forEach(function(r) {
+      if (!byFont[r.font]) byFont[r.font] = [];
+      byFont[r.font].push(r);
+    });
+    Object.keys(byFont).forEach(function(font) {
+      var content = byFont[font].map(function(r) { return r.output; }).join('\n');
+      zip.file(font + '.txt', content);
+    });
+  } else if (format === 'bySource') {
+    // By Source: 每个来源一个文件
+    var bySource = {};
+    results.forEach(function(r) {
+      if (!bySource[r.source]) bySource[r.source] = [];
+      bySource[r.source].push(r);
+    });
+    Object.keys(bySource).forEach(function(source) {
+      var content = bySource[source].map(function(r) { return r.output; }).join('\n');
+      // 清理文件名中的特殊字符
+      var safeName = source.replace(/[^a-zA-Z0-9._-]/g, '_');
+      zip.file(safeName + '.txt', content);
+    });
+  }
+
   zip.generateAsync({ type: 'blob' }).then(function(blob) {
     var link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'font-results.zip';
     link.click();
+    showToast('ZIP downloaded!');
   });
 }
 
-function downloadAsHTML() {
-  var results = window._batchResults;
-  if (!results || !results.length) { showToast('No results'); return; }
-
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Font Results</title></head><body>';
-  html += '<h1>Font Generator Results</h1>';
-  results.forEach(function(r) {
-    html += '<p><strong>' + r.font + '</strong> (' + r.source + '): ' + r.output + '</p>';
-  });
-  html += '</body></html>';
-  downloadFile('font-results.html', html, 'text/html');
-}
-
+// 🖼️ PNG 下载（按分组渲染）
 function downloadAsImage() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
 
-  // 使用 Canvas 直接绘制，避免 html2canvas 对 Unicode 字体的渲染问题
+  var format = getOutputFormat();
+  var groups = groupResults(results, format);
+
   var canvas = document.createElement('canvas');
   var ctx = canvas.getContext('2d');
 
   var fontSize = 16;
-  var lineHeight = 28;
+  var lineHeight = 26;
+  var titleHeight = 28;
   var padding = 30;
-  var labelHeight = 14;
   var maxWidth = 800;
-  var rowHeight = lineHeight + labelHeight + 8;
 
-  // 计算需要的行数和实际高度
-  var totalRows = results.length;
+  // 计算总高度
+  var totalHeight = padding + 30; // 标题
+  groups.forEach(function(group) {
+    totalHeight += titleHeight + 10;
+    group.items.forEach(function() { totalHeight += lineHeight; });
+    totalHeight += 15; // 分组间距
+  });
+  totalHeight += padding;
+
   canvas.width = maxWidth;
-  canvas.height = Math.max(200, padding * 2 + totalRows * rowHeight);
+  canvas.height = Math.max(200, totalHeight);
 
   // 白色背景
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // 标题
+  // 主标题
   ctx.fillStyle = '#1e40af';
-  ctx.font = 'bold 20px Arial, sans-serif';
-  ctx.fillText('Font Generator Results', padding, padding + 16);
+  ctx.font = 'bold 18px Arial, sans-serif';
+  ctx.fillText('Font Generator Results', padding, padding + 18);
 
-  var y = padding + 50;
+  var y = padding + 40;
 
-  results.forEach(function(r) {
-    if (y + rowHeight > canvas.height - padding) return; // 防止溢出
+  groups.forEach(function(group) {
+    // 分组标题
+    ctx.fillStyle = '#374151';
+    ctx.font = 'bold 14px Arial, sans-serif';
+    ctx.fillText('── ' + group.title + ' ──', padding, y);
+    y += titleHeight;
 
-    // 字体名称标签
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '12px Arial, sans-serif';
-    ctx.fillText('[' + r.font + '] ' + r.source, padding, y);
-
-    // 转换后的文本
+    // 每行纯文本
     ctx.fillStyle = '#1e40af';
     ctx.font = fontSize + 'px Arial, sans-serif';
-    // 截断过长文本
-    var displayText = r.output;
-    if (displayText.length > 80) displayText = displayText.substring(0, 80) + '...';
-    ctx.fillText(displayText, padding, y + labelHeight + 4);
+    group.items.forEach(function(r) {
+      var text = r.output;
+      if (text.length > 70) text = text.substring(0, 70) + '...';
+      ctx.fillText(text, padding + 10, y);
+      y += lineHeight;
+    });
 
-    // 分隔线
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.beginPath();
-    ctx.moveTo(padding, y + rowHeight - 4);
-    ctx.lineTo(maxWidth - padding, y + rowHeight - 4);
-    ctx.stroke();
-
-    y += rowHeight;
+    y += 15; // 分组间距
   });
 
   // 水印
@@ -725,7 +793,6 @@ function downloadAsImage() {
     ctx.fillText('Generated by Font Generator Free', padding, canvas.height - 12);
   }
 
-  // 下载
   var link = document.createElement('a');
   link.download = 'font-results-' + Date.now() + '.png';
   link.href = canvas.toDataURL('image/png');
@@ -733,6 +800,7 @@ function downloadAsImage() {
   showToast('PNG downloaded!');
 }
 
+// 📕 PDF 下载（Canvas 绘制后嵌入）
 function downloadAsPDF() {
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
@@ -740,41 +808,51 @@ function downloadAsPDF() {
   var jsPDFConstructor = (typeof jspdf !== 'undefined' && jspdf.jsPDF) ? jspdf.jsPDF : (typeof jsPDF !== 'undefined' ? jsPDF : null);
   if (!jsPDFConstructor) { showToast('PDF library not loaded'); return; }
 
-  // 用 Canvas 绘制内容，再转为图片嵌入 PDF（解决 Unicode 字体不支持问题）
+  var format = getOutputFormat();
+  var groups = groupResults(results, format);
+
+  // 用 Canvas 渲染
   var canvas = document.createElement('canvas');
   var ctx = canvas.getContext('2d');
-
   var fontSize = 14;
-  var lineHeight = 24;
-  var labelHeight = 12;
-  var rowGap = 12;
-  var padding = 40;
-  var rowHeight = labelHeight + lineHeight + rowGap;
+  var lineHeight = 22;
+  var titleHeight = 24;
+  var padding = 30;
+  var maxWidth = 800;
 
-  canvas.width = 800;
-  canvas.height = Math.max(400, padding * 2 + results.length * rowHeight + 40);
+  var totalHeight = padding + 20;
+  groups.forEach(function(group) {
+    totalHeight += titleHeight + 8;
+    group.items.forEach(function() { totalHeight += lineHeight; });
+    totalHeight += 12;
+  });
+  totalHeight += padding;
 
-  // 白色背景
+  canvas.width = maxWidth;
+  canvas.height = Math.max(300, totalHeight);
+
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   var y = padding;
-  results.forEach(function(r) {
-    if (y + rowHeight > canvas.height - 20) return;
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px Arial, sans-serif';
-    ctx.fillText('[' + r.font + '] (' + r.source + ')', padding, y);
-    y += labelHeight + 2;
+  groups.forEach(function(group) {
+    ctx.fillStyle = '#374151';
+    ctx.font = 'bold 13px Arial, sans-serif';
+    ctx.fillText('── ' + group.title + ' ──', padding, y);
+    y += titleHeight;
 
     ctx.fillStyle = '#1e40af';
     ctx.font = fontSize + 'px Arial, sans-serif';
-    var displayText = r.output;
-    if (displayText.length > 80) displayText = displayText.substring(0, 80) + '...';
-    ctx.fillText(displayText, padding, y);
-    y += lineHeight + rowGap;
+    group.items.forEach(function(r) {
+      var text = r.output;
+      if (text.length > 70) text = text.substring(0, 70) + '...';
+      ctx.fillText(text, padding + 8, y);
+      y += lineHeight;
+    });
+    y += 12;
   });
 
-  // 创建 PDF 并嵌入图片
+  // 嵌入 PDF
   var imgData = canvas.toDataURL('image/png');
   var doc = new jsPDFConstructor();
   var pdfWidth = doc.internal.pageSize.getWidth();
@@ -782,24 +860,37 @@ function downloadAsPDF() {
   var imgWidth = pdfWidth - 20;
   var imgHeight = (canvas.height / canvas.width) * imgWidth;
 
-  // 如果图片太高，分页处理
   if (imgHeight <= pdfHeight - 20) {
     doc.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
   } else {
-    // 缩放适应第一页
-    var scale = (pdfHeight - 20) / imgHeight;
-    doc.addImage(imgData, 'PNG', 10, 10, imgWidth * scale, imgHeight * scale);
+    // 分页：按 PDF 页面高度切割 canvas
+    var pageImgHeight = (pdfHeight - 20) / imgWidth * canvas.width;
+    var remaining = canvas.height;
+    var srcY = 0;
+    var page = 0;
+
+    while (remaining > 0) {
+      if (page > 0) doc.addPage();
+
+      var sliceHeight = Math.min(remaining, pageImgHeight);
+      var pageCanvas = document.createElement('canvas');
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceHeight;
+      var pageCtx = pageCanvas.getContext('2d');
+      pageCtx.drawImage(canvas, 0, srcY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+
+      var sliceImg = pageCanvas.toDataURL('image/png');
+      var slicePdfHeight = (sliceHeight / canvas.width) * imgWidth;
+      doc.addImage(sliceImg, 'PNG', 10, 10, imgWidth, slicePdfHeight);
+
+      srcY += sliceHeight;
+      remaining -= sliceHeight;
+      page++;
+    }
   }
 
   doc.save('font-results-' + Date.now() + '.pdf');
   showToast('PDF downloaded!');
-}
-
-function downloadAllFormats() {
-  downloadResults();
-  downloadAsHTML();
-  downloadAsImage();
-  downloadAsPDF();
 }
 
 function downloadFile(filename, content, mimeType) {
