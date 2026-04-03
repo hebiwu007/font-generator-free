@@ -66,15 +66,26 @@ function fg_showUser(user) {
     if (btn) btn.style.display = 'none';
     if (info) info.style.display = 'flex';
     if (nameEl) nameEl.textContent = user.name || user.email || '';
-    if (avatarEl && user.picture) {
-        avatarEl.src = user.picture;
-        avatarEl.alt = user.name || 'User';
-        avatarEl.classList.remove('hidden');
-        if (initialEl) initialEl.classList.add('hidden');
-    } else if (initialEl) {
-        // 显示首字母
+    
+    // 显示首字母作为默认
+    if (initialEl) {
         var name = user.name || user.email || '?';
         initialEl.textContent = name.charAt(0).toUpperCase();
+        initialEl.style.display = '';
+    }
+    
+    // 如果有头像，等加载完成后替换首字母
+    if (avatarEl && user.picture) {
+        avatarEl.onload = function() {
+            avatarEl.style.display = 'block';
+            if (initialEl) initialEl.style.display = 'none';
+        };
+        avatarEl.onerror = function() {
+            avatarEl.style.display = 'none';
+            if (initialEl) initialEl.style.display = '';
+        };
+        avatarEl.src = user.picture;
+        avatarEl.alt = user.name || 'User';
     }
 }
 
