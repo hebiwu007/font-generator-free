@@ -857,12 +857,20 @@ function downloadAsZIP() {
 var FREE_COMBO_LIMIT = 3;
 
 function isProUser() {
+  // 必须先登录 Google
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+  if (!session || !session.user) return false;
+  
   // 检查后端 membershipStatus
   if (window.membershipStatus && window.membershipStatus.isPro) return true;
   // 检查 localStorage 本地 Pro 状态（沙箱/支付成功后标记）
   try {
     var proData = JSON.parse(localStorage.getItem('fg_pro_status'));
-    if (proData && proData.status === 'pro') return true;
+    if (proData && proData.status === 'pro') {
+      // 验证 Pro 状态属于当前登录用户
+      if (proData.payerEmail === session.user.email) return true;
+    }
   } catch (e) {}
   return false;
 }

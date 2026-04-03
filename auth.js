@@ -125,8 +125,14 @@ window.handleCredentialResponse = function (response) {
 
 window.signOut = function () {
     sessionStorage.removeItem(FG_SESSION_KEY);
+    // 清除本地 Pro 状态（需要重新登录后验证）
+    localStorage.removeItem('fg_pro_status');
+    // 重置全局 membershipStatus
+    if (window.membershipStatus) window.membershipStatus.isPro = false;
     try { if (window.google) google.accounts.id.disableAutoSelect(); } catch (e) {}
     fg_showLogin();
+    // 更新 UI 状态
+    if (typeof updateProUI === 'function') updateProUI();
     fg_toast('Signed out.', 'info');
 };
 

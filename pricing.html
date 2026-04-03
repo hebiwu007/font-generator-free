@@ -194,6 +194,14 @@
                             };
                             localStorage.setItem('fg_pro_status', JSON.stringify(proData));
                             
+                            // 同时保存到 sessionStorage 供当前会话使用
+                            try {
+                                var sessionData = JSON.parse(sessionStorage.getItem('fg_user_session'));
+                                if (sessionData && sessionData.user) {
+                                    sessionStorage.setItem('fg_pro_session', JSON.stringify({ isPro: true, plan: planType, email: sessionData.user.email }));
+                                }
+                            } catch(e) {}
+                            
                             // 更新全局 membershipStatus
                             if (window.membershipStatus) {
                                 window.membershipStatus.isPro = true;
