@@ -130,12 +130,7 @@
     <!-- PayPal SDK (沙箱环境) -->
     <script src="https://www.paypal.com/sdk/js?client-id=AWuiooLQ44pl54cf6yGeZa-3p7O-S5uXf4W1Hvg01liPaZ5tFIxYkfetc1_Mih9zNtf9n-pLkYnkEYVJ&currency=USD&intent=capture"></script>
     
-    <!-- Auth 模块 -->
-    <script src="auth.js"></script>
-    
     <script>
-        var API_BASE = 'https://font-generator-api.hebiwu007.workers.dev';
-        
         // 等待 PayPal SDK 加载后初始化按钮
         function initPayPal() {
             if (typeof paypal === 'undefined') {
@@ -162,23 +157,18 @@
                         label: 'paypal'
                     },
                     createOrder: function(data, actions) {
-                        var session = fg_loadSession();
-                        if (!session) {
-                            alert('Please sign in first at the main page');
-                            window.location.href = 'index.html';
-                            return;
-                        }
+                        var amount = plan === 'monthly' ? '2.99' : '9.99';
+                        var desc = plan === 'monthly' ? 'Font Generator Free - Pro Monthly' : 'Font Generator Free - Pro Lifetime';
                         
-                        // 创建订单并返回 orderId
-                        return fetch(API_BASE + '/api/payment/create-order', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                planType: plan,
-                                userId: session.user.sub
-                            })
-                        }).then(function(r) { return r.json(); })
-                          .then(function(d) { return d.orderId; });
+                        return actions.order.create({
+                            purchase_units: [{
+                                description: desc,
+                                amount: {
+                                    currency_code: 'USD',
+                                    value: amount
+                                }
+                            }]
+                        });
                     },
                     onApprove: function(data, actions) {
                         // 支付授权成功
