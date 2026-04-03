@@ -698,6 +698,14 @@ function getOutputFormat() {
   return el ? el.value : 'merged';
 }
 
+// 生成 HTML 包装内容（确保 Unicode 字体正确渲染）
+function generateHTMLContent(plainText) {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Font Generator Results</title>' +
+    '<style>body{font-family:"Segoe UI Symbol","Noto Sans","Noto Sans Symbols 2","DejaVu Sans","Apple Symbols",system-ui,sans-serif;' +
+    'padding:30px;background:#fff;color:#1e40af;font-size:16px;line-height:1.8;white-space:pre-wrap;word-break:break-all;}</style>' +
+    '</head><body>' + escapeHtml(plainText) + '</body></html>';
+}
+
 // 按 Output Format 生成纯文本内容（每行只有转换后的文本，不加前缀）
 function generateTXTContent(results, format) {
   var content = '';
@@ -782,11 +790,12 @@ function downloadAsZIP() {
   function safeName(s) { return s.replace(/[^a-zA-Z0-9._-]/g, '_'); }
 
   if (format === 'merged') {
-    // Merged: 一个文件包含所有结果
-    zip.file('all-results.txt', generateTXTContent(results, 'merged'));
+    // Merged: 一个 HTML 文件包含所有结果
+    var mergedContent = generateHTMLContent(generateTXTContent(results, 'merged'));
+    zip.file('all-results.html', mergedContent);
 
   } else if (format === 'byFont') {
-    // By Font: 每种字体×每个来源 = 一个文件，命名: 字体名-来源名.txt
+    // By Font: 每种字体×每个来源 = 一个 HTML 文件
     var groups = {};
     results.forEach(function(r) {
       var key = r.font + '|||' + r.source;
@@ -795,12 +804,12 @@ function downloadAsZIP() {
     });
     Object.keys(groups).forEach(function(key) {
       var g = groups[key];
-      var content = g.outputs.join('\n');
-      zip.file(safeName(g.font) + '-' + safeName(g.source) + '.txt', content);
+      var content = generateHTMLContent(g.outputs.join('\n'));
+      zip.file(safeName(g.font) + '-' + safeName(g.source) + '.html', content);
     });
 
   } else if (format === 'bySource') {
-    // By Source: 每个来源×每种字体 = 一个文件，命名: 来源名-字体名.txt
+    // By Source: 每个来源×每种字体 = 一个 HTML 文件
     var groups2 = {};
     results.forEach(function(r) {
       var key = r.source + '|||' + r.font;
@@ -809,8 +818,8 @@ function downloadAsZIP() {
     });
     Object.keys(groups2).forEach(function(key) {
       var g = groups2[key];
-      var content = g.outputs.join('\n');
-      zip.file(safeName(g.source) + '-' + safeName(g.font) + '.txt', content);
+      var content = generateHTMLContent(g.outputs.join('\n'));
+      zip.file(safeName(g.source) + '-' + safeName(g.font) + '.html', content);
     });
   }
 
