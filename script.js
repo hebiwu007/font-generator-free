@@ -696,32 +696,38 @@ function downloadAsZIP() {
   var format = getOutputFormat();
   var zip = new JSZip();
 
+  function safeName(s) { return s.replace(/[^a-zA-Z0-9._-]/g, '_'); }
+
   if (format === 'merged') {
     // Merged: 一个文件包含所有结果
     zip.file('all-results.txt', generateTXTContent(results, 'merged'));
+
   } else if (format === 'byFont') {
-    // By Font: 每种字体一个文件
-    var byFont = {};
+    // By Font: 每种字体×每个来源 = 一个文件，命名: 字体名-来源名.txt
+    var groups = {};
     results.forEach(function(r) {
-      if (!byFont[r.font]) byFont[r.font] = [];
-      byFont[r.font].push(r);
+      var key = r.font + '|||' + r.source;
+      if (!groups[key]) groups[key] = { font: r.font, source: r.source, outputs: [] };
+      groups[key].outputs.push(r.output);
     });
-    Object.keys(byFont).forEach(function(font) {
-      var content = byFont[font].map(function(r) { return r.output; }).join('\n');
-      zip.file(font + '.txt', content);
+    Object.keys(groups).forEach(function(key) {
+      var g = groups[key];
+      var content = g.outputs.join('\n');
+      zip.file(safeName(g.font) + '-' + safeName(g.source) + '.txt', content);
     });
+
   } else if (format === 'bySource') {
-    // By Source: 每个来源一个文件
-    var bySource = {};
+    // By Source: 每个来源×每种字体 = 一个文件，命名: 来源名-字体名.txt
+    var groups2 = {};
     results.forEach(function(r) {
-      if (!bySource[r.source]) bySource[r.source] = [];
-      bySource[r.source].push(r);
+      var key = r.source + '|||' + r.font;
+      if (!groups2[key]) groups2[key] = { source: r.source, font: r.font, outputs: [] };
+      groups2[key].outputs.push(r.output);
     });
-    Object.keys(bySource).forEach(function(source) {
-      var content = bySource[source].map(function(r) { return r.output; }).join('\n');
-      // 清理文件名中的特殊字符
-      var safeName = source.replace(/[^a-zA-Z0-9._-]/g, '_');
-      zip.file(safeName + '.txt', content);
+    Object.keys(groups2).forEach(function(key) {
+      var g = groups2[key];
+      var content = g.outputs.join('\n');
+      zip.file(safeName(g.source) + '-' + safeName(g.font) + '.txt', content);
     });
   }
 
