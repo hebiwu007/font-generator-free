@@ -21,7 +21,6 @@ export default {
           return jsonResponse({ success: false, error: 'Missing required fields' }, 400, corsHeaders);
         }
 
-        // 确保表存在
         await ensureTables(env);
 
         await env.DB.prepare(
@@ -38,7 +37,6 @@ export default {
         const google_sub = url.searchParams.get('google_sub');
         if (!google_sub) return jsonResponse({ success: false, error: 'Missing google_sub' }, 400, corsHeaders);
 
-        // 确保表存在
         await ensureTables(env);
 
         const result = await env.DB.prepare(
@@ -58,11 +56,10 @@ export default {
         const { google_sub, text } = body;
         if (!google_sub || !text) return jsonResponse({ success: false, error: 'Missing fields' }, 400, corsHeaders);
 
-        // 确保表存在
         await ensureTables(env);
 
         await env.DB.prepare(
-          `INSERT INTO history (google_sub, text, created_at) VALUES (?, ?, datetime('now'))`
+          `INSERT INTO user_history (google_sub, text, created_at) VALUES (?, ?, datetime('now'))`
         ).bind(google_sub, text).run();
 
         console.log('[History/Save] Saved for:', google_sub, 'text length:', text.length);
@@ -74,11 +71,10 @@ export default {
         const google_sub = url.searchParams.get('google_sub');
         if (!google_sub) return jsonResponse({ success: false, error: 'Missing google_sub' }, 400, corsHeaders);
 
-        // 确保表存在
         await ensureTables(env);
 
         const results = await env.DB.prepare(
-          `SELECT text, created_at FROM history WHERE google_sub = ? ORDER BY id DESC LIMIT 20`
+          `SELECT text, created_at FROM user_history WHERE google_sub = ? ORDER BY id DESC LIMIT 20`
         ).bind(google_sub).all();
         return jsonResponse({ success: true, history: results.results }, 200, corsHeaders);
       }
@@ -90,7 +86,7 @@ export default {
 
         await ensureTables(env);
 
-        await env.DB.prepare(`DELETE FROM history WHERE google_sub = ?`).bind(google_sub).run();
+        await env.DB.prepare(`DELETE FROM user_history WHERE google_sub = ?`).bind(google_sub).run();
         return jsonResponse({ success: true }, 200, corsHeaders);
       }
 
@@ -104,6 +100,7 @@ export default {
 };
 
 // 确保 D1 数据库中有所需的表
+// 使用 user_history 表名避免与旧的 history 表冲突
 async function ensureTables(env) {
   await env.DB.batch([
     env.DB.prepare(`
@@ -120,14 +117,14 @@ async function ensureTables(env) {
       )
     `),
     env.DB.prepare(`
-      CREATE TABLE IF NOT EXISTS history (
+      CREATE TABLE IF NOT EXISTS user_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         google_sub TEXT NOT NULL,
         text TEXT NOT NULL,
         created_at TEXT
       )
     `),
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_history_google_sub ON history(google_sub)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_user_history_google_sub ON user_history(google_sub)`),
   ]);
 }
 
