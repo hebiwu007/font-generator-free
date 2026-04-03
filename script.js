@@ -276,18 +276,64 @@ function getHistory() {
 function saveToHistory(text) {
   if (!isProUser()) return; // 历史记录仅 Pro 用户
   if (!text || !text.trim()) return;
+  
+  // 保存到本地
   var history = getHistory();
-  // 去重：如果已存在则移到最前面
   var idx = history.indexOf(text);
   if (idx >= 0) history.splice(idx, 1);
   history.unshift(text);
   if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  
+  // 同步到后端 D1
+  syncHistoryToBackend(text);
+}
+
+function syncHistoryToBackend(text) {
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+  if (!session || !session.user) return;
+  
+  fetch('https://font-generator-api.hebiwu007.workers.dev/api/history/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ google_sub: session.user.sub, text: text })
+  }).catch(function(e) {
+    console.error('Failed to sync history:', e);
+  });
 }
 
 function clearHistory() {
   localStorage.removeItem(HISTORY_KEY);
   renderHistory();
+  // 清除后端历史
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+  if (session && session.user) {
+    fetch('https://font-generator-api.hebiwu007.workers.dev/api/history/clear?google_sub=' + encodeURIComponent(session.user.sub), {
+      method: 'DELETE'
+    }).catch(function(e) {});
+  }
+}
+
+function loadHistoryFromBackend() {
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+  if (!session || !session.user) return;
+  
+  fetch('https://font-generator-api.hebiwu007.workers.dev/api/history/list?google_sub=' + encodeURIComponent(session.user.sub))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success && d.history && d.history.length > 0) {
+        // 用后端数据覆盖本地
+        var texts = d.history.map(function(h) { return h.text; });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(texts));
+        renderHistory();
+      }
+    })
+    .catch(function(e) {
+      console.error('Failed to load history:', e);
+    });
 }
 
 function useHistoryText(text) {

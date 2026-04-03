@@ -140,6 +140,8 @@ function checkProFromBackend(googleSub) {
                 if (window.membershipStatus) window.membershipStatus.isPro = true;
                 if (typeof updateProUI === 'function') updateProUI();
                 console.log('[Auth] Pro status verified from backend:', d);
+                // 加载云端历史记录
+                if (typeof loadHistoryFromBackend === 'function') loadHistoryFromBackend();
             } else {
                 console.log('[Auth] User is not Pro (backend check)');
             }
@@ -159,6 +161,8 @@ window.signOut = function () {
     if (window.membershipStatus) window.membershipStatus.isPro = false;
     try { if (window.google) google.accounts.id.disableAutoSelect(); } catch (e) {}
     fg_showLogin();
+    // 重新渲染 Google Sign-In 按钮
+    fg_renderButton();
     // 更新 UI 状态
     if (typeof updateProUI === 'function') updateProUI();
     fg_toast('Signed out.', 'info');
