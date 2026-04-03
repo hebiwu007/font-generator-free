@@ -1229,25 +1229,20 @@ function updateProUI() {
   if (planBadge) {
     if (isPro) {
       planBadge.textContent = '⭐ Pro';
-      planBadge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white';
+      planBadge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-sm';
+      planBadge.onclick = null;
+      planBadge.style.cursor = 'default';
     } else {
       planBadge.textContent = 'Free';
-      planBadge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600 cursor-pointer';
+      planBadge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600 cursor-pointer hover:bg-gray-300 transition';
       planBadge.onclick = function() { window.location.href = 'pricing.html'; };
     }
   }
-  // Pro 用户隐藏 PRO 标签
+  // Pro 用户隐藏下载按钮的 PRO 标签
   var tags = document.querySelectorAll('#png-pro-tag, #pdf-pro-tag');
   tags.forEach(function(tag) {
     tag.style.display = isPro ? 'none' : 'inline';
   });
-  // Pro badge 显示
-  var badge = document.getElementById('pro-badge');
-  if (badge && isPro) {
-    badge.style.display = 'inline-block';
-    badge.textContent = '⭐ Pro';
-    badge.className = 'text-xs bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-1 rounded-full font-semibold';
-  }
   // 更新 Batch 权限 UI
   updateBatchPermissionUI();
   // 历史记录按钮状态
