@@ -75,6 +75,21 @@ fontDictionaries.forEach(function(font) {
   });
 });
 
+// 旧版 Black Bubble 映射的反向映射（兼容旧数据）
+// 旧版使用 U+1F150-U+1F169 (uppercase) 和 U+1F180-U+1F199 (lowercase)
+// 新版统一使用 U+1F170-U+1F189
+(function() {
+  var oldUpperStart = 0x1F150;
+  var oldLowerStart = 0x1F180;
+  var base = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (var i = 0; i < 26; i++) {
+    var oldLowerChar = String.fromCodePoint(oldLowerStart + i);
+    var oldUpperChar = String.fromCodePoint(oldUpperStart + i);
+    if (!reverseCharMap.has(oldLowerChar)) reverseCharMap.set(oldLowerChar, base[i]);
+    if (!reverseCharMap.has(oldUpperChar)) reverseCharMap.set(oldUpperChar, base[i + 26]);
+  }
+})();
+
 // ==================== 文本处理工具 ====================
 
 // 清理组合修饰符 (U+0300 - U+036F 等)
