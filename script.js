@@ -867,10 +867,7 @@ function isProUser() {
   // 检查 localStorage 本地 Pro 状态（沙箱/支付成功后标记）
   try {
     var proData = JSON.parse(localStorage.getItem('fg_pro_status'));
-    if (proData && proData.status === 'pro') {
-      // 验证 Pro 状态属于当前登录用户
-      if (proData.payerEmail === session.user.email) return true;
-    }
+    if (proData && proData.status === 'pro') return true;
   } catch (e) {}
   return false;
 }
@@ -1223,6 +1220,8 @@ function checkPaymentSuccess() {
   if (params.get('payment') === 'success') {
     // 清除 URL 参数
     window.history.replaceState({}, '', 'index.html');
+    // 刷新 UI 状态
+    updateProUI();
     // 显示成功提示
     showToast('🎉 Welcome to Pro! All features unlocked.');
   }
