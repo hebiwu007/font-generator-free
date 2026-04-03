@@ -1,3 +1,13 @@
 name = "font-generator-free"
-compatibility_date = "2024-03-01"
-pages_build_output_dir = "."
+compatibility_date = "2024-01-01"
+workers_dev = false
+
+[site]
+bucket = "font-generator-free"
+
+[env.production]
+ENVIRONMENT = "production"
+
+[[routes]]
+pattern = "/*"
+zone_id = "fontgeneratorfree.online"

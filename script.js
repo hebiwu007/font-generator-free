@@ -842,8 +842,47 @@ function downloadAsZIP() {
   });
 }
 
-// 🖼️ PNG 下载（按分组渲染）
+// ==================== 权限校验系统 ====================
+
+var FREE_COMBO_LIMIT = 3;
+
+function isProUser() {
+  return !!(window.membershipStatus && window.membershipStatus.isPro);
+}
+
+function checkProAndShowUpgrade(featureName) {
+  if (isProUser()) return true;
+  showProUpgradePopup(featureName);
+  return false;
+}
+
+function showProUpgradePopup(featureName) {
+  var overlay = document.getElementById('pro-upgrade-overlay');
+  var titleEl = document.getElementById('pro-upgrade-title');
+  if (overlay) {
+    if (titleEl) titleEl.textContent = featureName + ' is a Pro feature';
+    overlay.style.display = 'flex';
+  } else {
+    window.open('pricing.html', '_blank');
+  }
+}
+
+function closeProUpgradePopup() {
+  var overlay = document.getElementById('pro-upgrade-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function getComboCount() {
+  try {
+    var saved = localStorage.getItem('fg_saved_combos');
+    if (!saved) return 0;
+    return JSON.parse(saved).length;
+  } catch (e) { return 0; }
+}
+
+// 🖼️ PNG 下载（按分组渲染）— Pro 功能
 function downloadAsImage() {
+  if (!checkProAndShowUpgrade('PNG Download')) return;
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
 
@@ -869,8 +908,9 @@ function downloadAsImage() {
     });
 }
 
-// 📕 PDF 下载
+// 📕 PDF 下载 — Pro 功能
 function downloadAsPDF() {
+  if (!checkProAndShowUpgrade('PDF Download')) return;
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
 
@@ -1033,6 +1073,13 @@ function saveNewCombo() {
 
   // 检查重名
   var existing = combos.findIndex(function(c) { return c.name === name; });
+  
+  // 免费用户 Combo 数量限制
+  if (existing < 0 && !isProUser() && combos.length >= FREE_COMBO_LIMIT) {
+    showProUpgradePopup('Unlimited Combos (Free limit: ' + FREE_COMBO_LIMIT + ')');
+    return;
+  }
+
   var newCombo = { name: name, fonts: comboSelectedFonts.slice() };
 
   if (existing >= 0) {
@@ -1137,8 +1184,27 @@ document.addEventListener('DOMContentLoaded', function() {
   initFontGrid();
   initBatchFontModeHandlers();
   renderHistory();
+  updateProUI();
 
   // 自动聚焦输入框
   var singleInput = document.getElementById('input-single');
   if (singleInput) singleInput.focus();
 });
+
+// ==================== Pro UI 更新 ====================
+
+function updateProUI() {
+  var isPro = isProUser();
+  // Pro 用户隐藏 PRO 标签
+  var tags = document.querySelectorAll('#png-pro-tag, #pdf-pro-tag');
+  tags.forEach(function(tag) {
+    tag.style.display = isPro ? 'none' : 'inline';
+  });
+  // Pro badge 显示
+  var badge = document.getElementById('pro-badge');
+  if (badge && isPro) {
+    badge.style.display = 'inline-block';
+    badge.textContent = '⭐ Pro';
+    badge.className = 'text-xs bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-1 rounded-full font-semibold';
+  }
+}

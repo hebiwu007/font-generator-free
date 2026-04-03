@@ -185,11 +185,13 @@
                     <button onclick="downloadAsZIP()" class="bg-yellow-600 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-yellow-700 transition text-sm flex items-center justify-center gap-1.5">
                         📁 ZIP
                     </button>
-                    <button onclick="downloadAsImage()" class="bg-blue-600 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-blue-700 transition text-sm flex items-center justify-center gap-1.5">
+                    <button onclick="downloadAsImage()" class="bg-blue-600 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-blue-700 transition text-sm flex items-center justify-center gap-1.5 relative">
                         🖼️ PNG
+                        <span id="png-pro-tag" class="absolute -top-1 -right-1 text-[10px] bg-yellow-400 text-yellow-900 px-1 rounded font-bold">PRO</span>
                     </button>
-                    <button onclick="downloadAsPDF()" class="bg-purple-600 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-purple-700 transition text-sm flex items-center justify-center gap-1.5">
+                    <button onclick="downloadAsPDF()" class="bg-purple-600 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-purple-700 transition text-sm flex items-center justify-center gap-1.5 relative">
                         📕 PDF
+                        <span id="pdf-pro-tag" class="absolute -top-1 -right-1 text-[10px] bg-yellow-400 text-yellow-900 px-1 rounded font-bold">PRO</span>
                     </button>
                 </div>
             </div>
@@ -259,6 +261,23 @@
         </div>
         <div id="history-list" class="p-2 max-h-[55vh] overflow-y-auto">
             <div class="text-gray-400 text-sm text-center py-4">No history yet</div>
+        </div>
+    </div>
+
+    <!-- Pro Upgrade Popup -->
+    <div id="pro-upgrade-overlay" style="display:none" class="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center" onclick="if(event.target===this)closeProUpgradePopup()">
+        <div class="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl text-center">
+            <div class="text-4xl mb-3">⭐</div>
+            <h3 id="pro-upgrade-title" class="text-xl font-bold mb-2">This is a Pro feature</h3>
+            <p class="text-gray-500 mb-5 text-sm">Upgrade to Pro to unlock PNG/PDF downloads, unlimited combos, and more.</p>
+            <div class="flex flex-col gap-3">
+                <a href="pricing.html" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-bold hover:opacity-90 transition">
+                    🚀 Upgrade to Pro
+                </a>
+                <button onclick="closeProUpgradePopup()" class="text-gray-400 hover:text-gray-600 text-sm transition">
+                    Maybe later
+                </button>
+            </div>
         </div>
     </div>
 </body>
