@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Font Combos - Font Generator Free</title>
     <link rel="canonical" href="https://fontgeneratorfree.online/combo.html" />
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-    <script src="auth.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
@@ -19,14 +17,7 @@
             </a>
             <div class="flex items-center gap-3">
                 <a href="index.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Generator</a>
-                <a href="history.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">History</a>
-                <span id="pro-badge" style="display:none;"></span>
-                <div id="auth-login-btn"></div>
-                <div id="auth-user-info" style="display:none;" class="flex items-center gap-2">
-                    <img id="auth-user-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full border-2 border-blue-200">
-                    <span id="auth-user-name" class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
-                    <button onclick="signOut()" class="text-xs text-gray-400 hover:text-red-500">Sign out</button>
-                </div>
+                <a href="pricing.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Pricing</a>
             </div>
         </div>
     </header>
@@ -39,12 +30,7 @@
             </button>
         </div>
 
-        <!-- Pro 提示 -->
-        <div id="pro-prompt" class="hidden bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white mb-6">
-            <h2 class="text-xl font-bold mb-2">🔒 Pro Feature</h2>
-            <p class="mb-4">Upgrade to Pro to create and save your favorite font combinations!</p>
-            <a href="pricing.html" class="inline-block bg-white text-blue-700 px-6 py-2 rounded-lg font-bold hover:bg-blue-50">View Plans</a>
-        </div>
+        <p class="text-gray-500 text-sm mb-4">Free users can create up to 3 combos. <a href="pricing.html" class="text-blue-600 font-semibold">Upgrade to Pro</a> for unlimited combos & cloud sync.</p>
 
         <!-- 组合列表 -->
         <div id="combo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
@@ -55,12 +41,6 @@
             <h3 class="text-xl font-bold text-gray-700 mb-2">No combos yet</h3>
             <p class="text-gray-500 mb-4">Create your first font combo!</p>
             <button onclick="showCreateModal()" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">Create Combo</button>
-        </div>
-
-        <!-- 加载中 -->
-        <div id="loading" class="text-center py-12">
-            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
-            <p class="text-gray-500 mt-4">Loading...</p>
         </div>
     </main>
 
@@ -76,9 +56,12 @@
             
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Select Fonts</label>
-                <div id="font-selector" class="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                    <!-- 动态生成 -->
-                </div>
+                <div id="font-selector" class="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto"></div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Preview</label>
+                <div id="combo-preview" class="p-3 bg-gray-50 rounded-lg text-sm text-gray-400">Select fonts to preview...</div>
             </div>
             
             <div class="flex gap-2 justify-end">
@@ -89,180 +72,164 @@
     </div>
 
     <footer class="bg-white border-t border-gray-200 py-6 text-center text-gray-500 text-sm mt-auto">
-        <p>© <span id="year"></span> Font Generator Free. All rights reserved.</p>
+        <p>&copy; <span id="year"></span> Font Generator Free. All rights reserved.</p>
     </footer>
 
-    <script src="membership.js"></script>
     <script>
-        var fontNames = ['Bold', 'Italic', 'Bold Italic', 'Cursive', 'Bold Cursive', 'Double Struck', 'Bubble', 'Black Bubble', 'Gothic', 'Bold Gothic', 'Square', 'Black Square', 'Monospace', 'Upside Down', 'Small Caps', 'Subscript', 'Superscript', 'Strikethrough', 'Underline', 'Wide', 'Parenthesized', 'Tiny', 'Zalgo', 'Crossed', 'Arrow', 'Heart', 'Star', 'Dot', 'Bracket', 'Wave'];
+    (function() {
+        var STORAGE_KEY = 'fg_saved_combos';
+        var FREE_LIMIT = 3;
+        var fontNames = ['Bold','Italic','Bold Italic','Cursive','Bold Cursive','Double Struck','Bubble','Black Bubble','Gothic','Bold Gothic','Square','Black Square','Monospace','Upside Down','Small Caps','Subscript','Superscript','Strikethrough','Underline','Wide','Parenthesized','Tiny','Zalgo','Crossed','Arrow','Heart','Star','Dot','Bracket','Wave'];
         var selectedFonts = [];
         var loadedCombos = [];
 
-        // 初始化
         document.getElementById('year').textContent = new Date().getFullYear();
-        init();
 
-        async function init() {
-            await waitForAuth();
-            
-            if (!window.membershipStatus || !window.membershipStatus.isPro) {
-                document.getElementById('pro-prompt').classList.remove('hidden');
-            }
-            
-            await loadCombos();
-        }
-
-        function waitForAuth() {
-            return new Promise(resolve => {
-                if (window.googleUser) {
-                    syncUserToBackend(window.googleUser, window.idToken).then(() => resolve());
-                } else {
-                    var session = fg_loadSession();
-                    if (session) {
-                        syncUserToBackend(session.user, session.idToken).then(() => resolve());
-                    } else {
-                        document.getElementById('pro-prompt').classList.remove('hidden');
-                        resolve();
-                    }
-                }
-            });
-        }
-
-        async function loadCombos() {
-            document.getElementById('loading').classList.remove('hidden');
-            
+        // === Storage ===
+        function getCombos() {
             try {
-                var combos = await getFontComboList();
-                loadedCombos = combos;
-                
-                if (combos.length === 0) {
-                    showEmptyState();
-                } else {
-                    renderCombos(combos);
-                }
-            } catch (error) {
-                console.error('Load combos error:', error);
-                showEmptyState();
+                var d = localStorage.getItem(STORAGE_KEY);
+                return d ? JSON.parse(d) : [];
+            } catch(e) { return []; }
+        }
+
+        function saveCombos(combos) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(combos));
+        }
+
+        // === Render ===
+        function loadCombos() {
+            loadedCombos = getCombos();
+            var list = document.getElementById('combo-list');
+            var empty = document.getElementById('empty-state');
+
+            if (loadedCombos.length === 0) {
+                list.innerHTML = '';
+                empty.classList.remove('hidden');
+            } else {
+                empty.classList.add('hidden');
+                list.innerHTML = '';
+                loadedCombos.forEach(function(combo, idx) {
+                    var fonts = combo.fonts || [];
+                    var div = document.createElement('div');
+                    div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100';
+                    div.innerHTML = '<div class="flex justify-between items-start mb-3">' +
+                        '<div><h3 class="font-bold text-gray-800">' + escapeHtml(combo.name) + '</h3>' +
+                        '<p class="text-xs text-gray-500">' + fonts.length + ' fonts</p></div>' +
+                        '<div class="flex gap-2">' +
+                        '<button class="text-blue-600 text-sm font-medium hover:underline" data-use="' + idx + '">Use</button>' +
+                        '<button class="text-red-500 text-sm font-medium hover:underline" data-del="' + idx + '">Delete</button>' +
+                        '</div></div>' +
+                        '<div class="flex flex-wrap gap-1">' +
+                        fonts.map(function(f) { return '<span class="text-xs bg-gray-100 px-2 py-1 rounded">' + escapeHtml(f) + '</span>'; }).join('') +
+                        '</div>';
+                    list.appendChild(div);
+                });
+
+                // 绑定事件
+                list.querySelectorAll('[data-use]').forEach(function(btn) {
+                    btn.onclick = function() { useCombo(parseInt(btn.dataset.use)); };
+                });
+                list.querySelectorAll('[data-del]').forEach(function(btn) {
+                    btn.onclick = function() { deleteCombo(parseInt(btn.dataset.del)); };
+                });
             }
-            
-            document.getElementById('loading').classList.add('hidden');
         }
 
-        function renderCombos(combos) {
-            document.getElementById('empty-state').classList.add('hidden');
-            var container = document.getElementById('combo-list');
-            container.innerHTML = '';
-            
-            combos.forEach(function(combo) {
-                var fonts = JSON.parse(combo.fonts);
-                var div = document.createElement('div');
-                div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100';
-                div.innerHTML = '
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <h3 class="font-bold text-gray-800">' + combo.name + '</h3>
-                            <p class="text-xs text-gray-500">' + fonts.length + ' fonts</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="useCombo(' + combo.id + ')" class="text-blue-600 text-sm font-medium">Use</button>
-                            <button onclick="deleteCombo(' + combo.id + ')" class="text-red-500 text-sm font-medium">Delete</button>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-1">
-                        ' + fonts.map(function(f) {
-                            return '<span class="text-xs bg-gray-100 px-2 py-1 rounded">' + f + '</span>';
-                        }).join('') + '
-                    </div>
-                ';
-                container.appendChild(div);
-            });
+        function escapeHtml(text) {
+            var d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
         }
 
-        function showEmptyState() {
-            document.getElementById('combo-list').innerHTML = '';
-            document.getElementById('empty-state').classList.remove('hidden');
-        }
-
-        function showCreateModal() {
-            if (!window.membershipStatus || !window.membershipStatus.isPro) {
-                showUpgradeModal();
+        // === Actions ===
+        window.showCreateModal = function() {
+            var combos = getCombos();
+            if (combos.length >= FREE_LIMIT) {
+                alert('Free users are limited to ' + FREE_LIMIT + ' combos. Upgrade to Pro for unlimited!');
                 return;
             }
-            
+            selectedFonts = [];
+            document.getElementById('combo-name').value = '';
+            document.getElementById('combo-preview').textContent = 'Select fonts to preview...';
             document.getElementById('create-modal').classList.remove('hidden');
             document.getElementById('create-modal').classList.add('flex');
             initFontSelector();
-        }
+        };
 
-        function closeCreateModal() {
+        window.closeCreateModal = function() {
             document.getElementById('create-modal').classList.add('hidden');
             document.getElementById('create-modal').classList.remove('flex');
             selectedFonts = [];
-        }
+        };
 
         function initFontSelector() {
             var container = document.getElementById('font-selector');
             container.innerHTML = '';
-            
             fontNames.forEach(function(name) {
                 var btn = document.createElement('button');
-                btn.className = 'font-btn p-2 rounded-lg bg-gray-100 text-xs font-medium';
+                btn.className = 'p-2 rounded-lg bg-gray-100 text-xs font-medium hover:bg-blue-100 transition';
                 btn.textContent = name;
-                btn.onclick = function() {
-                    toggleFont(name);
-                };
                 btn.dataset.font = name;
+                btn.onclick = function() { toggleFont(name, btn); };
                 container.appendChild(btn);
             });
         }
 
-        function toggleFont(name) {
-            var btn = document.querySelector('[data-font="' + name + '"]');
+        function toggleFont(name, btn) {
             var pos = selectedFonts.indexOf(name);
-            
             if (pos > -1) {
                 selectedFonts.splice(pos, 1);
-                btn.classList.remove('bg-blue-600', 'text-white');
-                btn.classList.add('bg-gray-100');
+                btn.className = 'p-2 rounded-lg bg-gray-100 text-xs font-medium hover:bg-blue-100 transition';
             } else {
                 selectedFonts.push(name);
-                btn.classList.remove('bg-gray-100');
-                btn.classList.add('bg-blue-600', 'text-white');
+                btn.className = 'p-2 rounded-lg bg-blue-600 text-white text-xs font-medium transition';
             }
+            updatePreview();
         }
 
-        async function createCombo() {
-            var name = document.getElementById('combo-name').value.trim();
-            if (!name) {
-                alert('Please enter a name');
-                return;
-            }
+        function updatePreview() {
+            var preview = document.getElementById('combo-preview');
             if (selectedFonts.length === 0) {
-                alert('Please select at least one font');
-                return;
-            }
-            
-            var id = await saveFontCombo(name, selectedFonts);
-            if (id) {
-                closeCreateModal();
-                loadCombos();
+                preview.textContent = 'Select fonts to preview...';
+                preview.className = 'p-3 bg-gray-50 rounded-lg text-sm text-gray-400';
+            } else {
+                preview.textContent = selectedFonts.join(', ');
+                preview.className = 'p-3 bg-gray-50 rounded-lg text-sm text-blue-600';
             }
         }
 
-        function useCombo(id) {
-            var combo = loadedCombos.find(function(c) { return c.id === id; });
+        window.createCombo = function() {
+            var name = document.getElementById('combo-name').value.trim();
+            if (!name) { alert('Please enter a name'); return; }
+            if (selectedFonts.length === 0) { alert('Please select at least one font'); return; }
+
+            var combos = getCombos();
+            combos.push({ name: name, fonts: selectedFonts.slice(), created: Date.now() });
+            saveCombos(combos);
+            closeCreateModal();
+            loadCombos();
+        };
+
+        function useCombo(idx) {
+            var combo = loadedCombos[idx];
             if (combo) {
                 localStorage.setItem('fg_current_combo', JSON.stringify(combo));
                 window.location.href = 'index.html';
             }
         }
 
-        async function deleteCombo(id) {
+        function deleteCombo(idx) {
             if (!confirm('Delete this combo?')) return;
-            
-            await deleteFontCombo(id);
+            var combos = getCombos();
+            combos.splice(idx, 1);
+            saveCombos(combos);
             loadCombos();
         }
+
+        // 初始化
+        loadCombos();
+    })();
     </script>
 </body>
 </html>
