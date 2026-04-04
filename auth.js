@@ -109,9 +109,11 @@ function fg_toast(msg, type) {
 // ─── 登录回调（挂到 window，供 GIS 调用）────────────────────────────────────
 
 window.handleCredentialResponse = function (response) {
+    console.log('[Auth] handleCredentialResponse triggered');
     var payload = fg_parseJwt(response.credential);
     if (!fg_validateJwt(payload)) { fg_toast('Login failed. Please try again.', 'error'); return; }
     var user = { sub: payload.sub, email: payload.email, name: payload.name, picture: payload.picture };
+    console.log('[Auth] User logged in:', user.email, 'sub:', user.sub);
     fg_saveSession(user, response.credential);
     fg_showUser(user);
     fg_toast('Welcome, ' + (user.name || user.email) + '! 🎉');
@@ -125,9 +127,11 @@ window.handleCredentialResponse = function (response) {
 
 // 从后端 D1 数据库检查 Pro 状态
 function checkProFromBackend(googleSub) {
+    console.log('[Auth] Checking Pro status from backend for:', googleSub);
     fetch('https://font-generator-api.hebiwu007.workers.dev/api/pro/check?google_sub=' + encodeURIComponent(googleSub))
         .then(function(r) { return r.json(); })
         .then(function(d) {
+            console.log('[Auth] Pro check result:', JSON.stringify(d));
             if (d.success && d.isPro) {
                 // 后端确认是 Pro，更新本地状态
                 var proData = {
@@ -201,7 +205,7 @@ function fg_init() {
     // 如果已有会话，直接显示用户
     var session = fg_loadSession();
     if (session) {
-        console.log('[Auth] Existing session found:', session.user.email);
+        console.log('[Auth] Existing session found:', session.user.email, 'sub:', session.user.sub);
         fg_showUser(session.user);
         // 检查后端 Pro 状态
         if (session.user && session.user.sub) {
