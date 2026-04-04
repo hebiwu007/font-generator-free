@@ -2,7 +2,7 @@
  * PayPal 支付处理模块
  */
 
-const PAYPAL_API_BASE = 'https://api-m.sandbox.paypal.com'; // 沙箱环境
+const PAYPAL_API_BASE = 'https://api-m.paypal.com'; // 正式环境
 
 // 获取 PayPal Access Token
 async function getPayPalAccessToken(env) {
