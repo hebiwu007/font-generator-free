@@ -127,8 +127,14 @@ window.handleCredentialResponse = function (response) {
 
 // 从后端 D1 数据库检查 Pro 状态
 function checkProFromBackend(googleSub) {
-    console.log('[Auth] Checking Pro status from backend for:', googleSub);
-    fetch('https://font-generator-api.hebiwu007.workers.dev/api/pro/check?google_sub=' + encodeURIComponent(googleSub))
+    // 同时传 email 用于备查
+    var session = null;
+    try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+    var email = (session && session.user && session.user.email) || '';
+    
+    console.log('[Auth] Checking Pro status from backend for:', googleSub, 'email:', email);
+    var url = 'https://font-generator-api.hebiwu007.workers.dev/api/pro/check?google_sub=' + encodeURIComponent(googleSub) + '&email=' + encodeURIComponent(email);
+    fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(d) {
             console.log('[Auth] Pro check result:', JSON.stringify(d));

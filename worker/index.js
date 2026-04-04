@@ -35,13 +35,30 @@ export default {
       // GET /api/pro/check — 检查用户是否 Pro
       if (url.pathname === '/api/pro/check' && request.method === 'GET') {
         const google_sub = url.searchParams.get('google_sub');
+        const email = url.searchParams.get('email') || '';
         if (!google_sub) return jsonResponse({ success: false, error: 'Missing google_sub' }, 400, corsHeaders);
 
         await ensureTables(env);
 
-        const result = await env.DB.prepare(
+        // 先用 google_sub 查
+        let result = await env.DB.prepare(
           `SELECT * FROM pro_users WHERE google_sub = ? AND status = 'active'`
         ).bind(google_sub).first();
+
+        // 如果没找到，用 email 查（兼容注册时 sub 不一致的情况）
+        if (!result && email) {
+          result = await env.DB.prepare(
+            `SELECT * FROM pro_users WHERE email = ? AND status = 'active'`
+          ).bind(email).first();
+          // 如果通过 email 找到了，更新记录的 google_sub
+          if (result) {
+            await env.DB.prepare(
+              `UPDATE pro_users SET google_sub = ? WHERE email = ?`
+            ).bind(google_sub, email).run();
+            console.log('[Pro/Check] Updated google_sub for email:', email, '->', google_sub);
+          }
+        }
+
         return jsonResponse({
           success: true,
           isPro: !!result,
