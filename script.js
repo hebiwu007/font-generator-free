@@ -825,7 +825,7 @@ function downloadAsTXT() {
     'padding:30px;background:#fff;color:#1e40af;font-size:16px;line-height:1.8;white-space:pre-wrap;word-break:break-all;}</style>' +
     '</head><body>' + escapeHtml(plainContent) + '</body></html>';
   downloadFile('font-results.html', htmlContent, 'text/html');
-  if (typeof recordAction === 'function') recordAction('download', { download_type: 'html' });
+  if (typeof recordAction === 'function') recordAction('download', { download_type: 'txt' });
   showToast('HTML downloaded!');
 }
 
