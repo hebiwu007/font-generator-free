@@ -214,9 +214,6 @@ function onSingleInput() {
     return;
   }
 
-  // 保存到历史记录
-  saveToHistory(text);
-
   var results = generateFonts(text);
   container.innerHTML = '';
 
@@ -241,13 +238,15 @@ function onSingleInput() {
     var btn = document.createElement('button');
     btn.className = 'text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100 whitespace-nowrap transition';
     btn.textContent = '📋 Copy';
-    btn.onclick = (function(t, b) {
+    btn.onclick = (function(t, b, fontName) {
       return function() {
         navigator.clipboard.writeText(t);
         b.textContent = '✅';
         setTimeout(function() { b.textContent = '📋 Copy'; }, 1500);
+        // 记录复制行为
+        if (typeof recordAction === 'function') recordAction('copy', { font_style: fontName });
       };
-    })(result.text, btn);
+    })(result.text, btn, result.name);
 
     card.appendChild(infoDiv);
     card.appendChild(btn);
@@ -263,60 +262,10 @@ function clearSingle() {
 
 // ==================== 历史记录 ====================
 
-var HISTORY_KEY = 'fg_history';
-var MAX_HISTORY = 20;
-
-function getHistory() {
-  try {
-    var data = localStorage.getItem(HISTORY_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch(e) { return []; }
-}
-
-function saveToHistory(text) {
-  if (!text || !text.trim()) return;
-  
-  // 检查 Pro 状态
-  var isPro = isProUser();
-  console.log('[History] saveToHistory called, isPro:', isPro, 'text:', text.substring(0, 30));
-  
-  if (!isPro) return; // 历史记录仅 Pro 用户
-  
-  // 保存到本地
-  var history = getHistory();
-  var idx = history.indexOf(text);
-  if (idx >= 0) history.splice(idx, 1);
-  history.unshift(text);
-  if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  
-  // 同步到后端 D1
-  syncHistoryToBackend(text);
-}
-
-function syncHistoryToBackend(text) {
-  var session = null;
-  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
-  if (!session || !session.user) {
-    console.warn('[History] No session found, cannot sync to backend');
-    return;
-  }
-  
-  console.log('[History] Syncing to backend, google_sub:', session.user.sub);
-  fetch('https://font-generator-api.hebiwu007.workers.dev/api/history/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ google_sub: session.user.sub, text: text })
-  }).then(function(r) { return r.json(); }).then(function(d) {
-    console.log('[History] Backend sync result:', d);
-  }).catch(function(e) {
-    console.error('[History] Failed to sync history:', e);
-  });
-}
+// 历史记录已改为行为元数据记录，由 recordAction() 统一处理（定义在 auth.js）
+// 各操作点（copy/batch/download）直接调用 recordAction(action, {extra})
 
 function clearHistory() {
-  localStorage.removeItem(HISTORY_KEY);
-  renderHistory();
   // 清除后端历史
   var session = null;
   try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
@@ -328,23 +277,7 @@ function clearHistory() {
 }
 
 function loadHistoryFromBackend() {
-  var session = null;
-  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
-  if (!session || !session.user) return;
-  
-  fetch('https://font-generator-api.hebiwu007.workers.dev/api/history/list?google_sub=' + encodeURIComponent(session.user.sub))
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.success && d.history && d.history.length > 0) {
-        // 用后端数据覆盖本地
-        var texts = d.history.map(function(h) { return h.text; });
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(texts));
-        renderHistory();
-      }
-    })
-    .catch(function(e) {
-      console.error('Failed to load history:', e);
-    });
+  // 历史记录现在是行为元数据，不需要加载到本地
 }
 
 function useHistoryText(text) {
@@ -365,22 +298,59 @@ function useHistoryText(text) {
 function renderHistory() {
   var container = document.getElementById('history-list');
   if (!container) return;
-  var history = getHistory();
 
-  if (!history.length) {
-    container.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">No history yet</div>';
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+  if (!session || !session.user) {
+    container.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">Please login to view history</div>';
     return;
   }
 
-  var html = '';
-  history.forEach(function(text, i) {
-    var display = text.length > 40 ? text.substring(0, 40) + '...' : text;
-    html += '<div class="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 rounded-lg cursor-pointer transition group" onclick="useHistoryText(' + JSON.stringify(text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"')) + ')">' +
-      '<span class="text-sm text-gray-700 flex-1 truncate">' + escapeHtml(display) + '</span>' +
-      '<span class="text-gray-300 group-hover:text-gray-500 text-xs">↵</span>' +
-    '</div>';
-  });
-  container.innerHTML = html;
+  // 从后端加载行为历史
+  fetch('https://font-generator-api.hebiwu007.workers.dev/api/history/list?google_sub=' + encodeURIComponent(session.user.sub))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success || !d.history || d.history.length === 0) {
+        container.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">No history yet</div>';
+        return;
+      }
+
+      var html = '';
+      d.history.forEach(function(item) {
+        var icon = '📋';
+        var desc = '';
+        if (item.action === 'login') { icon = '🔑'; desc = 'Logged in'; }
+        else if (item.action === 'copy') { icon = '📋'; desc = 'Copied ' + (item.font_style || ''); }
+        else if (item.action === 'batch_convert') { icon = '📦'; desc = 'Batch converted ' + (item.batch_count || 0) + ' items'; }
+        else if (item.action === 'download') { icon = '📥'; desc = 'Downloaded ' + (item.download_type || '').toUpperCase(); }
+
+        var timeAgo = formatTimeAgo(item.created_at);
+        html += '<div class="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 rounded-lg transition">' +
+          '<span class="text-sm">' + icon + '</span>' +
+          '<span class="text-sm text-gray-700 flex-1">' + escapeHtml(desc) + '</span>' +
+          '<span class="text-gray-400 text-xs">' + timeAgo + '</span>' +
+        '</div>';
+      });
+      container.innerHTML = html;
+    })
+    .catch(function(e) {
+      container.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">Failed to load history</div>';
+    });
+}
+
+function formatTimeAgo(dateStr) {
+  if (!dateStr) return '';
+  try {
+    var d = new Date(dateStr.replace(' ', 'T') + 'Z');
+    var now = new Date();
+    var diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  } catch (e) {
+    return '';
+  }
 }
 
 function toggleHistoryPanel() {
@@ -730,6 +700,9 @@ function batchConvert() {
   document.getElementById('result-count').textContent = allResults.length;
   renderPreview(allResults, false);
 
+  // 记录批量转换行为
+  if (typeof recordAction === 'function') recordAction('batch_convert', { batch_count: allResults.length });
+
   showToast('Converted ' + allResults.length + ' results!');
 }
 
@@ -852,6 +825,7 @@ function downloadAsTXT() {
     'padding:30px;background:#fff;color:#1e40af;font-size:16px;line-height:1.8;white-space:pre-wrap;word-break:break-all;}</style>' +
     '</head><body>' + escapeHtml(plainContent) + '</body></html>';
   downloadFile('font-results.html', htmlContent, 'text/html');
+  if (typeof recordAction === 'function') recordAction('download', { download_type: 'html' });
   showToast('HTML downloaded!');
 }
 
@@ -905,6 +879,7 @@ function downloadAsZIP() {
     link.href = URL.createObjectURL(blob);
     link.download = 'font-results.zip';
     link.click();
+    if (typeof recordAction === 'function') recordAction('download', { download_type: 'zip' });
     showToast('ZIP downloaded!');
   });
 }
@@ -990,6 +965,7 @@ function downloadAsImage() {
       link.download = 'font-results-' + Date.now() + '.png';
       link.href = dataUrl;
       link.click();
+      if (typeof recordAction === 'function') recordAction('download', { download_type: 'png' });
       showToast('PNG downloaded!');
     })
     .catch(function(err) {
@@ -1053,6 +1029,7 @@ function downloadAsPDF() {
           }
         }
         doc.save('font-results-' + Date.now() + '.pdf');
+        if (typeof recordAction === 'function') recordAction('download', { download_type: 'pdf' });
         showToast('PDF downloaded!');
       };
       img.src = dataUrl;

@@ -117,6 +117,9 @@ window.handleCredentialResponse = function (response) {
     fg_saveSession(user, response.credential);
     fg_showUser(user);
     fg_toast('Welcome, ' + (user.name || user.email) + '! 🎉');
+    // 记录登录历史
+
+    recordAction('login');
     // 从后端检查 Pro 状态
     checkProFromBackend(user.sub);
     // 同步用户到后端
@@ -242,6 +245,37 @@ function fg_init() {
         }
     }, 100);
 }
+
+// ─── 操作历史记录（仅行为元数据，不含用户内容）──────────────────────────────
+
+function recordAction(action, extra) {
+    var session = null;
+    try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+    if (!session || !session.user) return;
+
+    var data = {
+        google_sub: session.user.sub,
+        action: action
+    };
+    if (extra) {
+        if (extra.font_style) data.font_style = extra.font_style;
+        if (extra.download_type) data.download_type = extra.download_type;
+        if (extra.batch_count) data.batch_count = extra.batch_count;
+    }
+
+    fetch('https://font-generator-api.hebiwu007.workers.dev/api/history/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        console.log('[History] Recorded:', action, d.success ? '✅' : '❌');
+    }).catch(function(e) {
+        console.error('[History] Record failed:', e);
+    });
+}
+
+// 暴露为全局函数供 script.js 调用
+window.recordAction = recordAction;
 
 // 确保在 DOM 就绪后执行（auth.js 在 <head> 同步加载，DOM 尚未解析）
 document.addEventListener('DOMContentLoaded', fg_init);

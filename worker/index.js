@@ -40,17 +40,14 @@ export default {
 
         await ensureTables(env);
 
-        // 先用 google_sub 查
         let result = await env.DB.prepare(
           `SELECT * FROM pro_users WHERE google_sub = ? AND status = 'active'`
         ).bind(google_sub).first();
 
-        // 如果没找到，用 email 查（兼容注册时 sub 不一致的情况）
         if (!result && email) {
           result = await env.DB.prepare(
             `SELECT * FROM pro_users WHERE email = ? AND status = 'active'`
           ).bind(email).first();
-          // 如果通过 email 找到了，更新记录的 google_sub
           if (result) {
             await env.DB.prepare(
               `UPDATE pro_users SET google_sub = ? WHERE email = ?`
@@ -67,23 +64,32 @@ export default {
         }, 200, corsHeaders);
       }
 
-      // POST /api/history/save — 保存历史记录
+      // POST /api/history/save — 保存操作历史（仅行为元数据，不含用户内容）
       if (url.pathname === '/api/history/save' && request.method === 'POST') {
         const body = await request.json();
-        const { google_sub, text } = body;
-        if (!google_sub || !text) return jsonResponse({ success: false, error: 'Missing fields' }, 400, corsHeaders);
+        const { google_sub, action, font_style, download_type, batch_count } = body;
+        if (!google_sub || !action) {
+          return jsonResponse({ success: false, error: 'Missing google_sub or action' }, 400, corsHeaders);
+        }
 
         await ensureTables(env);
 
         await env.DB.prepare(
-          `INSERT INTO user_history (google_sub, text, created_at) VALUES (?, ?, datetime('now'))`
-        ).bind(google_sub, text).run();
+          `INSERT INTO user_history (google_sub, action, font_style, download_type, batch_count, created_at)
+           VALUES (?, ?, ?, ?, ?, datetime('now'))`
+        ).bind(
+          google_sub,
+          action,
+          font_style || null,
+          download_type || null,
+          batch_count || null
+        ).run();
 
-        console.log('[History/Save] Saved for:', google_sub, 'text length:', text.length);
+        console.log('[History/Save]', action, 'for:', google_sub);
         return jsonResponse({ success: true }, 200, corsHeaders);
       }
 
-      // GET /api/history/list — 获取历史记录列表
+      // GET /api/history/list — 获取操作历史列表
       if (url.pathname === '/api/history/list' && request.method === 'GET') {
         const google_sub = url.searchParams.get('google_sub');
         if (!google_sub) return jsonResponse({ success: false, error: 'Missing google_sub' }, 400, corsHeaders);
@@ -91,12 +97,12 @@ export default {
         await ensureTables(env);
 
         const results = await env.DB.prepare(
-          `SELECT text, created_at FROM user_history WHERE google_sub = ? ORDER BY id DESC LIMIT 20`
+          `SELECT action, font_style, download_type, batch_count, created_at FROM user_history WHERE google_sub = ? ORDER BY id DESC LIMIT 50`
         ).bind(google_sub).all();
         return jsonResponse({ success: true, history: results.results }, 200, corsHeaders);
       }
 
-      // DELETE /api/history/clear — 清除历史记录
+      // DELETE /api/history/clear — 清除操作历史
       if (url.pathname === '/api/history/clear' && request.method === 'DELETE') {
         const google_sub = url.searchParams.get('google_sub');
         if (!google_sub) return jsonResponse({ success: false, error: 'Missing google_sub' }, 400, corsHeaders);
@@ -116,8 +122,6 @@ export default {
   }
 };
 
-// 确保 D1 数据库中有所需的表
-// 使用 user_history 表名避免与旧的 history 表冲突
 async function ensureTables(env) {
   await env.DB.batch([
     env.DB.prepare(`
@@ -137,7 +141,10 @@ async function ensureTables(env) {
       CREATE TABLE IF NOT EXISTS user_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         google_sub TEXT NOT NULL,
-        text TEXT NOT NULL,
+        action TEXT NOT NULL,
+        font_style TEXT,
+        download_type TEXT,
+        batch_count INTEGER,
         created_at TEXT
       )
     `),
