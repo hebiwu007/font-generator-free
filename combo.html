@@ -7,6 +7,7 @@
     <link rel="canonical" href="https://fontgeneratorfree.online/combo.html" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
@@ -16,13 +17,33 @@
                 Font Generator Free
             </a>
             <div class="flex items-center gap-3">
-                <a href="index.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Generator</a>
+                <a href="index.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700 transition">← Back to Generator</a>
                 <a href="pricing.html" class="text-sm text-blue-600 font-semibold hover:text-blue-700">Pricing</a>
+                <span id="plan-badge" class="text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600">Free</span>
+                <div id="auth-login-btn"></div>
+                <div id="auth-user-info" class="hidden items-center gap-2">
+                    <div id="auth-user-avatar-wrap" class="w-8 h-8 rounded-full border-2 border-blue-200 bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold overflow-hidden relative">
+                        <span id="auth-user-initial">?</span>
+                        <img id="auth-user-avatar" src="" alt="" class="absolute inset-0 w-full h-full object-cover" style="display:none">
+                    </div>
+                    <span id="auth-user-name" class="text-sm font-medium text-gray-700 max-w-[120px] truncate hidden md:block"></span>
+                    <span id="auth-user-email" class="text-xs text-gray-400 hidden md:block"></span>
+                    <button onclick="signOut()" class="text-xs bg-gray-100 text-gray-500 hover:text-red-500 hover:bg-red-50 px-2 py-1 rounded transition">Sign out</button>
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow container mx-auto px-4 max-w-4xl py-6">
+    <!-- Not logged in state -->
+    <div id="login-required" class="hidden flex-grow container mx-auto px-4 max-w-4xl py-16 text-center">
+        <div class="text-6xl mb-4">🔐</div>
+        <h2 class="text-2xl font-bold text-gray-700 mb-2">Login Required</h2>
+        <p class="text-gray-500 mb-6">Please sign in with your Google account to manage your font combos.</p>
+        <div id="auth-login-btn-center" class="flex justify-center"></div>
+    </div>
+
+    <!-- Logged in state -->
+    <div id="combo-content" class="hidden flex-grow container mx-auto px-4 max-w-4xl py-6">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold">🎨 My Font Combos</h1>
             <button onclick="showCreateModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
@@ -30,21 +51,45 @@
             </button>
         </div>
 
-        <p class="text-gray-500 text-sm mb-4">Free users can create up to 3 combos. <a href="pricing.html" class="text-blue-600 font-semibold">Upgrade to Pro</a> for unlimited combos & cloud sync.</p>
+        <div id="user-info-bar" class="flex items-center gap-3 mb-4 bg-white rounded-xl px-4 py-3 shadow-sm border border-gray-100">
+            <div id="combo-user-avatar-wrap" class="w-10 h-10 rounded-full border-2 border-blue-200 bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-bold overflow-hidden relative">
+                <span id="combo-user-initial">?</span>
+                <img id="combo-user-avatar" src="" alt="" class="absolute inset-0 w-full h-full object-cover" style="display:none">
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center gap-2">
+                    <span id="combo-user-name" class="font-semibold text-gray-800"></span>
+                    <span id="combo-pro-badge" class="hidden text-xs px-2 py-0.5 rounded-full font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white">⭐ Pro</span>
+                </div>
+                <span id="combo-user-email" class="text-xs text-gray-400"></span>
+            </div>
+            <div class="text-xs text-gray-400">
+                <span id="combo-count-display">0</span> combos
+                <span id="combo-limit-display" class="text-gray-300">/ 3 free limit</span>
+            </div>
+        </div>
 
-        <!-- 组合列表 -->
+        <!-- Loading state -->
+        <div id="combo-loading" class="text-center py-12">
+            <div class="text-4xl mb-4 animate-pulse">⏳</div>
+            <p class="text-gray-500">Loading your combos...</p>
+        </div>
+
+        <!-- Combo list -->
         <div id="combo-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 
-        <!-- 空状态 -->
+        <!-- Empty state -->
         <div id="empty-state" class="hidden text-center py-12">
             <div class="text-6xl mb-4">🎨</div>
             <h3 class="text-xl font-bold text-gray-700 mb-2">No combos yet</h3>
             <p class="text-gray-500 mb-4">Create your first font combo!</p>
             <button onclick="showCreateModal()" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">Create Combo</button>
         </div>
-    </main>
 
-    <!-- 创建组合弹窗 -->
+        <p class="text-gray-500 text-sm mt-6">Free users can create up to 3 combos. <a href="pricing.html" class="text-blue-600 font-semibold">Upgrade to Pro</a> for unlimited combos.</p>
+    </div>
+
+    <!-- Create combo modal -->
     <div id="create-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
             <h2 class="text-xl font-bold mb-4">Create Font Combo</h2>
@@ -63,12 +108,19 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Preview</label>
                 <div id="combo-preview" class="p-3 bg-gray-50 rounded-lg text-sm text-gray-400">Select fonts to preview...</div>
             </div>
+
+            <div id="create-error" class="hidden text-red-500 text-sm mb-3"></div>
             
             <div class="flex gap-2 justify-end">
                 <button onclick="closeCreateModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                <button onclick="createCombo()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
+                <button onclick="createCombo()" id="create-combo-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
             </div>
         </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg opacity-0 transition-opacity duration-300 z-50 flex items-center gap-2">
+        <span id="toast-text">Done!</span>
     </div>
 
     <footer class="bg-white border-t border-gray-200 py-6 text-center text-gray-500 text-sm mt-auto">
@@ -76,43 +128,283 @@
     </footer>
 
     <script>
-    (function() {
-        var STORAGE_KEY = 'fg_saved_combos';
-        var FREE_LIMIT = 3;
-        var fontNames = ['Bold','Italic','Bold Italic','Cursive','Bold Cursive','Double Struck','Bubble','Black Bubble','Gothic','Bold Gothic','Square','Black Square','Monospace','Upside Down','Small Caps','Subscript','Superscript','Strikethrough','Underline','Wide','Parenthesized','Tiny','Zalgo','Crossed','Arrow','Heart','Star','Dot','Bracket','Wave'];
-        var selectedFonts = [];
-        var loadedCombos = [];
+    var GOOGLE_CLIENT_ID = '1070692973169-kh4nort1uo59s8oq2159dqn6pc0cfp6e.apps.googleusercontent.com';
+    var API_BASE = 'https://font-generator-api.hebiwu007.workers.dev';
+    var FREE_LIMIT = 3;
+    var FG_SESSION_KEY = 'fg_user_session';
+    var fontNames = ['Bold','Italic','Bold Italic','Cursive','Bold Cursive','Double Struck','Bubble','Black Bubble','Gothic','Bold Gothic','Square','Black Square','Monospace','Upside Down','Small Caps','Subscript','Superscript','Strikethrough','Underline','Wide','Parenthesized','Tiny','Zalgo','Crossed','Arrow','Heart','Star','Dot','Bracket','Wave'];
+    var selectedFonts = [];
+    var loadedCombos = [];
+    var currentUser = null;
+    var isPro = false;
 
-        document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-        // === Storage ===
-        function getCombos() {
-            try {
-                var d = localStorage.getItem(STORAGE_KEY);
-                return d ? JSON.parse(d) : [];
-            } catch(e) { return []; }
+    // === JWT utils ===
+    function parseJwt(token) {
+        try {
+            var raw = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+            return JSON.parse(atob(raw));
+        } catch (e) { return null; }
+    }
+
+    function validateJwt(payload) {
+        if (!payload) return false;
+        var now = Math.floor(Date.now() / 1000);
+        if (payload.exp && payload.exp < now) return false;
+        if (payload.aud !== GOOGLE_CLIENT_ID) return false;
+        if (['https://accounts.google.com', 'accounts.google.com'].indexOf(payload.iss) === -1) return false;
+        return true;
+    }
+
+    // === Session ===
+    function loadSession() {
+        try {
+            var raw = sessionStorage.getItem(FG_SESSION_KEY);
+            if (!raw) return null;
+            var s = JSON.parse(raw);
+            if (!validateJwt(parseJwt(s.idToken))) { sessionStorage.removeItem(FG_SESSION_KEY); return null; }
+            return s;
+        } catch (e) { return null; }
+    }
+
+    // === Toast ===
+    function showToast(msg) {
+        var toast = document.getElementById('toast');
+        var toastText = document.getElementById('toast-text');
+        if (toast && toastText) {
+            toastText.textContent = msg;
+            toast.classList.add('opacity-100');
+            toast.classList.remove('opacity-0');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(function() {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 3000);
+        }
+    }
+
+    // === Auth UI ===
+    function showLoginUI() {
+        document.getElementById('auth-login-btn').style.display = '';
+        document.getElementById('auth-user-info').style.display = 'none';
+    }
+
+    function showUserUI(user) {
+        var btn = document.getElementById('auth-login-btn');
+        var info = document.getElementById('auth-user-info');
+        var nameEl = document.getElementById('auth-user-name');
+        var emailEl = document.getElementById('auth-user-email');
+        var avatarEl = document.getElementById('auth-user-avatar');
+        var initialEl = document.getElementById('auth-user-initial');
+        if (btn) btn.style.display = 'none';
+        if (info) info.style.display = 'flex';
+        if (nameEl) nameEl.textContent = user.name || user.email || '';
+        if (emailEl) emailEl.textContent = user.email || '';
+        if (initialEl) {
+            var name = user.name || user.email || '?';
+            initialEl.textContent = name.charAt(0).toUpperCase();
+            initialEl.style.display = '';
+        }
+        if (avatarEl && user.picture) {
+            avatarEl.onload = function() {
+                avatarEl.style.display = 'block';
+                if (initialEl) initialEl.style.display = 'none';
+            };
+            avatarEl.onerror = function() {
+                avatarEl.style.display = 'none';
+                if (initialEl) initialEl.style.display = '';
+            };
+            avatarEl.src = user.picture;
+        }
+    }
+
+    // === Google Sign-In ===
+    window.handleCredentialResponse = function(response) {
+        var payload = parseJwt(response.credential);
+        if (!validateJwt(payload)) { showToast('Login failed'); return; }
+        var user = { sub: payload.sub, email: payload.email, name: payload.name, picture: payload.picture };
+        sessionStorage.setItem(FG_SESSION_KEY, JSON.stringify({ user: user, idToken: response.credential }));
+        currentUser = user;
+        showUserUI(user);
+        showToast('Welcome, ' + (user.name || user.email) + '!');
+        checkProAndInit(user);
+    };
+
+    window.signOut = function() {
+        sessionStorage.removeItem(FG_SESSION_KEY);
+        try {
+            var keysToRemove = [];
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf('fg_') === 0) keysToRemove.push(key);
+            }
+            keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+        } catch(e) {}
+        currentUser = null;
+        isPro = false;
+        try { if (window.google) google.accounts.id.disableAutoSelect(); } catch(e) {}
+        showLoginUI();
+        showLoginRequired();
+        renderButton();
+        showToast('Signed out');
+    };
+
+    function renderButton() {
+        var container = document.getElementById('auth-login-btn');
+        if (!container) return;
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: window.handleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
+        });
+        google.accounts.id.renderButton(container, {
+            type: 'standard', theme: 'outline', size: 'large', shape: 'pill', text: 'signin_with', logo_alignment: 'left'
+        });
+    }
+
+    function renderCenterButton() {
+        var container = document.getElementById('auth-login-btn-center');
+        if (!container) return;
+        container.innerHTML = '';
+        var div = document.createElement('div');
+        div.id = 'auth-login-btn-center-inner';
+        container.appendChild(div);
+        google.accounts.id.renderButton(div, {
+            type: 'standard', theme: 'filled_blue', size: 'large', shape: 'pill', text: 'signin_with', logo_alignment: 'center'
+        });
+    }
+
+    // === Pro check ===
+    function checkProAndInit(user) {
+        var email = user.email || '';
+        fetch(API_BASE + '/api/pro/check?google_sub=' + encodeURIComponent(user.sub) + '&email=' + encodeURIComponent(email))
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                isPro = d.success && d.isPro;
+                if (isPro) {
+                    localStorage.setItem('fg_pro_status', JSON.stringify({ status: 'pro', plan: d.plan, source: 'backend' }));
+                }
+                showComboContent();
+            })
+            .catch(function() {
+                // Fallback: check localStorage
+                try {
+                    var proData = JSON.parse(localStorage.getItem('fg_pro_status'));
+                    isPro = proData && proData.status === 'pro';
+                } catch(e) {}
+                showComboContent();
+            });
+    }
+
+    // === View management ===
+    function showLoginRequired() {
+        document.getElementById('login-required').classList.remove('hidden');
+        document.getElementById('combo-content').classList.add('hidden');
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+            renderCenterButton();
+        }
+    }
+
+    function showComboContent() {
+        document.getElementById('login-required').classList.add('hidden');
+        document.getElementById('combo-content').classList.remove('hidden');
+
+        // Update user info bar
+        if (currentUser) {
+            var nameEl = document.getElementById('combo-user-name');
+            var emailEl = document.getElementById('combo-user-email');
+            var initialEl = document.getElementById('combo-user-initial');
+            var avatarEl = document.getElementById('combo-user-avatar');
+            if (nameEl) nameEl.textContent = currentUser.name || currentUser.email || '';
+            if (emailEl) emailEl.textContent = currentUser.email || '';
+            if (initialEl) {
+                var n = currentUser.name || currentUser.email || '?';
+                initialEl.textContent = n.charAt(0).toUpperCase();
+            }
+            if (avatarEl && currentUser.picture) {
+                avatarEl.onload = function() {
+                    avatarEl.style.display = 'block';
+                    if (initialEl) initialEl.style.display = 'none';
+                };
+                avatarEl.src = currentUser.picture;
+            }
         }
 
-        function saveCombos(combos) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(combos));
+        // Pro badge
+        var proBadge = document.getElementById('combo-pro-badge');
+        var planBadge = document.getElementById('plan-badge');
+        var limitDisplay = document.getElementById('combo-limit-display');
+        if (isPro) {
+            if (proBadge) proBadge.classList.remove('hidden');
+            if (planBadge) {
+                planBadge.textContent = '⭐ Pro';
+                planBadge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-sm';
+            }
+            if (limitDisplay) limitDisplay.style.display = 'none';
+        } else {
+            if (proBadge) proBadge.classList.add('hidden');
+            if (planBadge) {
+                planBadge.textContent = 'Free';
+                planBadge.className = 'text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600 cursor-pointer hover:bg-gray-300 transition';
+                planBadge.onclick = function() { window.location.href = 'pricing.html'; };
+            }
+            if (limitDisplay) limitDisplay.style.display = '';
         }
 
-        // === Render ===
-        function loadCombos() {
-            loadedCombos = getCombos();
-            var list = document.getElementById('combo-list');
-            var empty = document.getElementById('empty-state');
+        loadCombos();
+    }
 
-            if (loadedCombos.length === 0) {
-                list.innerHTML = '';
+    // === API calls ===
+    function apiGetCombos() {
+        return fetch(API_BASE + '/api/combo/list?google_sub=' + encodeURIComponent(currentUser.sub))
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.success) return d.combos || [];
+                return [];
+            });
+    }
+
+    function apiSaveCombo(name, fonts) {
+        return fetch(API_BASE + '/api/combo/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ google_sub: currentUser.sub, name: name, fonts: fonts })
+        }).then(function(r) { return r.json(); });
+    }
+
+    function apiDeleteCombo(id) {
+        return fetch(API_BASE + '/api/combo/delete?id=' + id + '&google_sub=' + encodeURIComponent(currentUser.sub), {
+            method: 'DELETE'
+        }).then(function(r) { return r.json(); });
+    }
+
+    // === Combo rendering ===
+    function loadCombos() {
+        var loading = document.getElementById('combo-loading');
+        var list = document.getElementById('combo-list');
+        var empty = document.getElementById('empty-state');
+        var countDisplay = document.getElementById('combo-count-display');
+
+        loading.classList.remove('hidden');
+        list.innerHTML = '';
+        empty.classList.add('hidden');
+
+        apiGetCombos().then(function(combos) {
+            loading.classList.add('hidden');
+            loadedCombos = combos;
+            if (countDisplay) countDisplay.textContent = combos.length;
+
+            if (combos.length === 0) {
                 empty.classList.remove('hidden');
             } else {
                 empty.classList.add('hidden');
-                list.innerHTML = '';
-                loadedCombos.forEach(function(combo, idx) {
-                    var fonts = combo.fonts || [];
+                combos.forEach(function(combo, idx) {
+                    var fonts = [];
+                    try { fonts = JSON.parse(combo.fonts); } catch(e) { fonts = combo.fonts || []; }
                     var div = document.createElement('div');
-                    div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100';
+                    div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 transition';
                     div.innerHTML = '<div class="flex justify-between items-start mb-3">' +
                         '<div><h3 class="font-bold text-gray-800">' + escapeHtml(combo.name) + '</h3>' +
                         '<p class="text-xs text-gray-500">' + fonts.length + ' fonts</p></div>' +
@@ -126,7 +418,6 @@
                     list.appendChild(div);
                 });
 
-                // 绑定事件
                 list.querySelectorAll('[data-use]').forEach(function(btn) {
                     btn.onclick = function() { useCombo(parseInt(btn.dataset.use)); };
                 });
@@ -134,102 +425,169 @@
                     btn.onclick = function() { deleteCombo(parseInt(btn.dataset.del)); };
                 });
             }
+        }).catch(function() {
+            loading.classList.add('hidden');
+            list.innerHTML = '<div class="col-span-2 text-center text-red-500 py-8">Failed to load combos. Please try again.</div>';
+        });
+    }
+
+    function escapeHtml(text) {
+        var d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+    }
+
+    // === Actions ===
+    window.showCreateModal = function() {
+        if (!isPro && loadedCombos.length >= FREE_LIMIT) {
+            showToast('Free limit reached (' + FREE_LIMIT + ' combos). Upgrade to Pro!');
+            setTimeout(function() { window.location.href = 'pricing.html'; }, 1500);
+            return;
         }
+        selectedFonts = [];
+        document.getElementById('combo-name').value = '';
+        document.getElementById('combo-preview').textContent = 'Select fonts to preview...';
+        document.getElementById('combo-preview').className = 'p-3 bg-gray-50 rounded-lg text-sm text-gray-400';
+        document.getElementById('create-error').classList.add('hidden');
+        document.getElementById('create-modal').classList.remove('hidden');
+        document.getElementById('create-modal').classList.add('flex');
+        initFontSelector();
+    };
 
-        function escapeHtml(text) {
-            var d = document.createElement('div');
-            d.textContent = text;
-            return d.innerHTML;
+    window.closeCreateModal = function() {
+        document.getElementById('create-modal').classList.add('hidden');
+        document.getElementById('create-modal').classList.remove('flex');
+        selectedFonts = [];
+    };
+
+    function initFontSelector() {
+        var container = document.getElementById('font-selector');
+        container.innerHTML = '';
+        fontNames.forEach(function(name) {
+            var btn = document.createElement('button');
+            btn.className = 'p-2 rounded-lg bg-gray-100 text-xs font-medium hover:bg-blue-100 transition';
+            btn.textContent = name;
+            btn.dataset.font = name;
+            btn.onclick = function() { toggleFont(name, btn); };
+            container.appendChild(btn);
+        });
+    }
+
+    function toggleFont(name, btn) {
+        var pos = selectedFonts.indexOf(name);
+        if (pos > -1) {
+            selectedFonts.splice(pos, 1);
+            btn.className = 'p-2 rounded-lg bg-gray-100 text-xs font-medium hover:bg-blue-100 transition';
+        } else {
+            selectedFonts.push(name);
+            btn.className = 'p-2 rounded-lg bg-blue-600 text-white text-xs font-medium transition';
         }
+        updatePreview();
+    }
 
-        // === Actions ===
-        window.showCreateModal = function() {
-            var combos = getCombos();
-            if (combos.length >= FREE_LIMIT) {
-                alert('Free users are limited to ' + FREE_LIMIT + ' combos. Upgrade to Pro for unlimited!');
-                return;
-            }
-            selectedFonts = [];
-            document.getElementById('combo-name').value = '';
-            document.getElementById('combo-preview').textContent = 'Select fonts to preview...';
-            document.getElementById('create-modal').classList.remove('hidden');
-            document.getElementById('create-modal').classList.add('flex');
-            initFontSelector();
-        };
+    function updatePreview() {
+        var preview = document.getElementById('combo-preview');
+        if (selectedFonts.length === 0) {
+            preview.textContent = 'Select fonts to preview...';
+            preview.className = 'p-3 bg-gray-50 rounded-lg text-sm text-gray-400';
+        } else {
+            preview.textContent = selectedFonts.join(', ');
+            preview.className = 'p-3 bg-gray-50 rounded-lg text-sm text-blue-600';
+        }
+    }
 
-        window.closeCreateModal = function() {
-            document.getElementById('create-modal').classList.add('hidden');
-            document.getElementById('create-modal').classList.remove('flex');
-            selectedFonts = [];
-        };
+    window.createCombo = function() {
+        var name = document.getElementById('combo-name').value.trim();
+        var errorEl = document.getElementById('create-error');
+        if (!name) { errorEl.textContent = 'Please enter a name'; errorEl.classList.remove('hidden'); return; }
+        if (selectedFonts.length === 0) { errorEl.textContent = 'Please select at least one font'; errorEl.classList.remove('hidden'); return; }
 
-        function initFontSelector() {
-            var container = document.getElementById('font-selector');
-            container.innerHTML = '';
-            fontNames.forEach(function(name) {
-                var btn = document.createElement('button');
-                btn.className = 'p-2 rounded-lg bg-gray-100 text-xs font-medium hover:bg-blue-100 transition';
-                btn.textContent = name;
-                btn.dataset.font = name;
-                btn.onclick = function() { toggleFont(name, btn); };
-                container.appendChild(btn);
+        var btn = document.getElementById('create-combo-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        apiSaveCombo(name, selectedFonts.slice())
+            .then(function(d) {
+                btn.disabled = false;
+                btn.textContent = 'Save';
+                if (d.success) {
+                    closeCreateModal();
+                    loadCombos();
+                    showToast('Combo "' + name + '" created!');
+                } else {
+                    errorEl.textContent = d.error || 'Failed to create combo';
+                    errorEl.classList.remove('hidden');
+                }
+            })
+            .catch(function() {
+                btn.disabled = false;
+                btn.textContent = 'Save';
+                errorEl.textContent = 'Network error. Please try again.';
+                errorEl.classList.remove('hidden');
             });
+    };
+
+    function useCombo(idx) {
+        var combo = loadedCombos[idx];
+        if (combo) {
+            var fonts = [];
+            try { fonts = JSON.parse(combo.fonts); } catch(e) { fonts = combo.fonts || []; }
+            localStorage.setItem('fg_current_combo', JSON.stringify({ name: combo.name, fonts: fonts }));
+            window.location.href = 'index.html';
+        }
+    }
+
+    function deleteCombo(idx) {
+        var combo = loadedCombos[idx];
+        if (!combo) return;
+        if (!confirm('Delete combo "' + combo.name + '"?')) return;
+
+        apiDeleteCombo(combo.id)
+            .then(function(d) {
+                if (d.success) {
+                    showToast('Combo deleted');
+                    loadCombos();
+                } else {
+                    showToast(d.error || 'Failed to delete');
+                }
+            })
+            .catch(function() {
+                showToast('Failed to delete combo');
+            });
+    }
+
+    // === Init ===
+    function init() {
+        var session = loadSession();
+        if (session && session.user) {
+            currentUser = session.user;
+            showUserUI(currentUser);
+            checkProAndInit(currentUser);
+        } else {
+            showLoginUI();
+            showLoginRequired();
         }
 
-        function toggleFont(name, btn) {
-            var pos = selectedFonts.indexOf(name);
-            if (pos > -1) {
-                selectedFonts.splice(pos, 1);
-                btn.className = 'p-2 rounded-lg bg-gray-100 text-xs font-medium hover:bg-blue-100 transition';
-            } else {
-                selectedFonts.push(name);
-                btn.className = 'p-2 rounded-lg bg-blue-600 text-white text-xs font-medium transition';
-            }
-            updatePreview();
+        // Wait for GIS
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+            renderButton();
+            if (!currentUser) renderCenterButton();
+        } else {
+            var attempts = 0;
+            var timer = setInterval(function() {
+                attempts++;
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                    clearInterval(timer);
+                    renderButton();
+                    if (!currentUser) renderCenterButton();
+                } else if (attempts >= 100) {
+                    clearInterval(timer);
+                }
+            }, 100);
         }
+    }
 
-        function updatePreview() {
-            var preview = document.getElementById('combo-preview');
-            if (selectedFonts.length === 0) {
-                preview.textContent = 'Select fonts to preview...';
-                preview.className = 'p-3 bg-gray-50 rounded-lg text-sm text-gray-400';
-            } else {
-                preview.textContent = selectedFonts.join(', ');
-                preview.className = 'p-3 bg-gray-50 rounded-lg text-sm text-blue-600';
-            }
-        }
-
-        window.createCombo = function() {
-            var name = document.getElementById('combo-name').value.trim();
-            if (!name) { alert('Please enter a name'); return; }
-            if (selectedFonts.length === 0) { alert('Please select at least one font'); return; }
-
-            var combos = getCombos();
-            combos.push({ name: name, fonts: selectedFonts.slice(), created: Date.now() });
-            saveCombos(combos);
-            closeCreateModal();
-            loadCombos();
-        };
-
-        function useCombo(idx) {
-            var combo = loadedCombos[idx];
-            if (combo) {
-                localStorage.setItem('fg_current_combo', JSON.stringify(combo));
-                window.location.href = 'index.html';
-            }
-        }
-
-        function deleteCombo(idx) {
-            if (!confirm('Delete this combo?')) return;
-            var combos = getCombos();
-            combos.splice(idx, 1);
-            saveCombos(combos);
-            loadCombos();
-        }
-
-        // 初始化
-        loadCombos();
-    })();
+    document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>

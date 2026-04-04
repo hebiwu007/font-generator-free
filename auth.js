@@ -167,11 +167,25 @@ function checkProFromBackend(googleSub) {
 // ─── 退出登录 ─────────────────────────────────────────────────────────────────
 
 window.signOut = function () {
+    // 清除所有 session 数据
     sessionStorage.removeItem(FG_SESSION_KEY);
-    // 清除本地 Pro 状态（需要重新登录后验证）
-    localStorage.removeItem('fg_pro_status');
+    // 清除所有 localStorage 中与 fg_ 前缀相关的数据（保留 combos 已迁移到云端，但仍清理本地缓存）
+    try {
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key.indexOf('fg_') === 0) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+    } catch (e) {}
     // 重置全局 membershipStatus
-    if (window.membershipStatus) window.membershipStatus.isPro = false;
+    if (window.membershipStatus) {
+        window.membershipStatus.isPro = false;
+        window.membershipStatus.user = null;
+        window.membershipStatus.idToken = null;
+    }
     try { if (window.google) google.accounts.id.disableAutoSelect(); } catch (e) {}
     fg_showLogin();
     // 重新渲染 Google Sign-In 按钮

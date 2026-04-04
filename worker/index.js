@@ -3,7 +3,7 @@ export default {
     const url = new URL(request.url);
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
 
@@ -113,6 +113,127 @@ export default {
         return jsonResponse({ success: true }, 200, corsHeaders);
       }
 
+      // ==================== Combo APIs ====================
+
+      // POST /api/combo/save — 保存 combo（需登录）
+      if (url.pathname === '/api/combo/save' && request.method === 'POST') {
+        const body = await request.json();
+        const { google_sub, name, fonts } = body;
+        if (!google_sub || !name || !fonts) {
+          return jsonResponse({ success: false, error: 'Missing required fields (google_sub, name, fonts)' }, 400, corsHeaders);
+        }
+
+        await ensureTables(env);
+
+        // 检查重名
+        const existing = await env.DB.prepare(
+          `SELECT id FROM font_combos WHERE google_sub = ? AND name = ?`
+        ).bind(google_sub, name).first();
+        if (existing) {
+          return jsonResponse({ success: false, error: 'Combo name already exists' }, 409, corsHeaders);
+        }
+
+        const fontsJson = typeof fonts === 'string' ? fonts : JSON.stringify(fonts);
+        const result = await env.DB.prepare(
+          `INSERT INTO font_combos (google_sub, name, fonts, created_at, updated_at) VALUES (?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(google_sub, name, fontsJson).run();
+
+        console.log('[Combo/Save] Saved combo:', name, 'for:', google_sub);
+        return jsonResponse({ success: true, id: result.meta.last_row_id }, 200, corsHeaders);
+      }
+
+      // GET /api/combo/list — 获取用户的 combo 列表
+      if (url.pathname === '/api/combo/list' && request.method === 'GET') {
+        const google_sub = url.searchParams.get('google_sub');
+        if (!google_sub) return jsonResponse({ success: false, error: 'Missing google_sub' }, 400, corsHeaders);
+
+        await ensureTables(env);
+
+        const results = await env.DB.prepare(
+          `SELECT id, google_sub, name, fonts, created_at, updated_at FROM font_combos WHERE google_sub = ? ORDER BY created_at DESC`
+        ).bind(google_sub).all();
+
+        return jsonResponse({ success: true, combos: results.results }, 200, corsHeaders);
+      }
+
+      // DELETE /api/combo/delete — 删除 combo（需登录）
+      if (url.pathname === '/api/combo/delete' && request.method === 'DELETE') {
+        const id = url.searchParams.get('id');
+        const google_sub = url.searchParams.get('google_sub');
+        if (!id || !google_sub) {
+          return jsonResponse({ success: false, error: 'Missing id or google_sub' }, 400, corsHeaders);
+        }
+
+        await ensureTables(env);
+
+        // 鉴权：检查 id 和 google_sub 匹配
+        const combo = await env.DB.prepare(
+          `SELECT google_sub FROM font_combos WHERE id = ?`
+        ).bind(id).first();
+        if (!combo) {
+          return jsonResponse({ success: false, error: 'Combo not found' }, 404, corsHeaders);
+        }
+        if (combo.google_sub !== google_sub) {
+          return jsonResponse({ success: false, error: 'Unauthorized: combo does not belong to this user' }, 403, corsHeaders);
+        }
+
+        await env.DB.prepare(`DELETE FROM font_combos WHERE id = ? AND google_sub = ?`).bind(id, google_sub).run();
+        console.log('[Combo/Delete] Deleted combo id:', id, 'for:', google_sub);
+        return jsonResponse({ success: true }, 200, corsHeaders);
+      }
+
+      // PUT /api/combo/update — 更新 combo（需登录）
+      if (url.pathname === '/api/combo/update' && request.method === 'PUT') {
+        const body = await request.json();
+        const { id, google_sub, name, fonts } = body;
+        if (!id || !google_sub) {
+          return jsonResponse({ success: false, error: 'Missing id or google_sub' }, 400, corsHeaders);
+        }
+
+        await ensureTables(env);
+
+        // 鉴权：检查 id 和 google_sub 匹配
+        const combo = await env.DB.prepare(
+          `SELECT google_sub, name FROM font_combos WHERE id = ?`
+        ).bind(id).first();
+        if (!combo) {
+          return jsonResponse({ success: false, error: 'Combo not found' }, 404, corsHeaders);
+        }
+        if (combo.google_sub !== google_sub) {
+          return jsonResponse({ success: false, error: 'Unauthorized: combo does not belong to this user' }, 403, corsHeaders);
+        }
+
+        // 如果改了名字，检查新名字是否重复
+        const newName = name || combo.name;
+        if (newName !== combo.name) {
+          const dup = await env.DB.prepare(
+            `SELECT id FROM font_combos WHERE google_sub = ? AND name = ? AND id != ?`
+          ).bind(google_sub, newName, id).first();
+          if (dup) {
+            return jsonResponse({ success: false, error: 'Combo name already exists' }, 409, corsHeaders);
+          }
+        }
+
+        const fontsJson = fonts ? (typeof fonts === 'string' ? fonts : JSON.stringify(fonts)) : null;
+
+        if (fontsJson && newName !== combo.name) {
+          await env.DB.prepare(
+            `UPDATE font_combos SET name = ?, fonts = ?, updated_at = datetime('now') WHERE id = ?`
+          ).bind(newName, fontsJson, id).run();
+        } else if (fontsJson) {
+          await env.DB.prepare(
+            `UPDATE font_combos SET fonts = ?, updated_at = datetime('now') WHERE id = ?`
+          ).bind(fontsJson, id).run();
+        } else if (newName !== combo.name) {
+          await env.DB.prepare(
+            `UPDATE font_combos SET name = ?, updated_at = datetime('now') WHERE id = ?`
+          ).bind(newName, id).run();
+        }
+
+        console.log('[Combo/Update] Updated combo id:', id, 'for:', google_sub);
+        return jsonResponse({ success: true }, 200, corsHeaders);
+      }
+
       return jsonResponse({ status: 'ok' }, 200, corsHeaders);
 
     } catch (err) {
@@ -149,6 +270,17 @@ async function ensureTables(env) {
       )
     `),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_user_history_google_sub ON user_history(google_sub)`),
+    env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS font_combos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        google_sub TEXT NOT NULL,
+        name TEXT NOT NULL,
+        fonts TEXT NOT NULL,
+        created_at TEXT,
+        updated_at TEXT
+      )
+    `),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_font_combos_google_sub ON font_combos(google_sub)`),
   ]);
 }
 

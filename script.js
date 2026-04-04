@@ -422,83 +422,50 @@ function toggleFont(name, btn) {
 
 // ==================== Batch 模式 - 字体模式切换 ====================
 
-// 加载 Combo 选项（先从 localStorage，再尝试从后端 API）
+// 加载 Combo 选项（从后端 API 加载）
 function loadComboOptions() {
   var comboSelect = document.getElementById('combo-select');
   if (!comboSelect) return;
 
   comboSelect.innerHTML = '<option value="">Loading combos...</option>';
 
-  var allCombos = [];
+  // 从后端 API 加载云端 combos
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
 
-  // 1. 先从 localStorage 加载本地 combos
-  try {
-    var savedCombos = localStorage.getItem('fg_saved_combos');
-    if (savedCombos) {
-      var localCombos = JSON.parse(savedCombos);
-      if (Array.isArray(localCombos)) {
-        localCombos.forEach(function(c) {
-          allCombos.push({ name: c.name, fonts: c.fonts, source: 'local' });
-        });
-      }
-    }
-  } catch (e) {}
-
-  // 2. 尝试从后端 API 加载云端 combos
-  if (typeof getFontComboList === 'function') {
-    getFontComboList().then(function(apiCombos) {
-      if (Array.isArray(apiCombos)) {
-        window._cachedCloudCombos = apiCombos; // 缓存供 getComboFonts 使用
-        apiCombos.forEach(function(c) {
-          var exists = allCombos.some(function(ac) { return ac.name === c.name; });
-          if (!exists) {
-            try {
-              allCombos.push({ name: c.name, fonts: JSON.parse(c.fonts), source: 'cloud' });
-            } catch (e2) {
-              allCombos.push({ name: c.name, fonts: c.fonts || [], source: 'cloud' });
-            }
-          }
-        });
-      }
-      renderComboOptions(comboSelect, allCombos);
-    }).catch(function() {
-      renderComboOptions(comboSelect, allCombos);
-    });
-  } else {
-    renderComboOptions(comboSelect, allCombos);
-  }
-}
-
-function renderComboOptions(selectEl, combos) {
-  selectEl.innerHTML = '<option value="">Select a combo...</option>';
-  if (combos.length === 0) {
-    var opt = document.createElement('option');
-    opt.disabled = true;
-    opt.textContent = 'No combos saved yet';
-    selectEl.appendChild(opt);
+  if (!session || !session.user || !session.user.sub) {
+    comboSelect.innerHTML = '<option value="">No combos (login required)</option>';
     return;
   }
-  combos.forEach(function(combo) {
-    var opt = document.createElement('option');
-    opt.value = combo.name;
-    opt.textContent = combo.name + ' (' + combo.fonts.length + ' fonts) ' + (combo.source === 'cloud' ? '☁️' : '💾');
-    selectEl.appendChild(opt);
-  });
+
+  fetch('https://font-generator-api.hebiwu007.workers.dev/api/combo/list?google_sub=' + encodeURIComponent(session.user.sub))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success || !d.combos || d.combos.length === 0) {
+        window._cachedCloudCombos = [];
+        comboSelect.innerHTML = '<option value="">No combos saved yet</option>';
+        return;
+      }
+      window._cachedCloudCombos = d.combos;
+      comboSelect.innerHTML = '<option value="">Select a combo...</option>';
+      d.combos.forEach(function(combo) {
+        var fonts = [];
+        try { fonts = JSON.parse(combo.fonts); } catch(e2) { fonts = combo.fonts || []; }
+        var opt = document.createElement('option');
+        opt.value = combo.name;
+        opt.textContent = combo.name + ' (' + fonts.length + ' fonts) ☁️';
+        opt.dataset.comboId = combo.id;
+        comboSelect.appendChild(opt);
+      });
+    })
+    .catch(function(e) {
+      comboSelect.innerHTML = '<option value="">Failed to load combos</option>';
+    });
 }
 
 // Batch 模式中 batchConvert 需要查找 combo 的字体列表
 function getComboFonts(comboName) {
-  // 1. 先从 localStorage 查找
-  try {
-    var savedCombos = localStorage.getItem('fg_saved_combos');
-    if (savedCombos) {
-      var combos = JSON.parse(savedCombos);
-      var found = combos.find(function(c) { return c.name === comboName; });
-      if (found && found.fonts) return found.fonts;
-    }
-  } catch (e) {}
-
-  // 2. 查缓存的云端 combos
+  // 查缓存的云端 combos
   if (window._cachedCloudCombos) {
     var combo = window._cachedCloudCombos.find(function(c) { return c.name === comboName; });
     if (combo) {
@@ -939,11 +906,8 @@ function closeProUpgradePopup() {
 }
 
 function getComboCount() {
-  try {
-    var saved = localStorage.getItem('fg_saved_combos');
-    if (!saved) return 0;
-    return JSON.parse(saved).length;
-  } catch (e) { return 0; }
+  // Combos 现在存储在云端，返回缓存数量或 0
+  return (window._cachedCloudCombos && window._cachedCloudCombos.length) || 0;
 }
 
 // 🖼️ PNG 下载（按分组渲染）— Pro 功能
@@ -1132,118 +1096,155 @@ function saveNewCombo() {
   if (!name) { showToast('Please enter a combo name'); return; }
   if (comboSelectedFonts.length === 0) { showToast('Please select at least one font'); return; }
 
-  // 保存到 localStorage
-  var combos = [];
-  try {
-    var saved = localStorage.getItem('fg_saved_combos');
-    if (saved) combos = JSON.parse(saved);
-  } catch (e) {}
-
-  // 检查重名
-  var existing = combos.findIndex(function(c) { return c.name === name; });
-  
-  // 免费用户 Combo 数量限制
-  if (existing < 0 && !isProUser() && combos.length >= FREE_COMBO_LIMIT) {
-    showProUpgradePopup('Unlimited Combos (Free limit: ' + FREE_COMBO_LIMIT + ')');
+  // 检查登录
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+  if (!session || !session.user) {
+    showToast('Please login to save combos');
     return;
   }
 
-  var newCombo = { name: name, fonts: comboSelectedFonts.slice() };
+  var google_sub = session.user.sub;
 
-  if (existing >= 0) {
-    combos[existing] = newCombo;
+  // 免费用户 Combo 数量限制 — 先查询后端已有数量
+  if (!isProUser()) {
+    fetch('https://font-generator-api.hebiwu007.workers.dev/api/combo/list?google_sub=' + encodeURIComponent(google_sub))
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var existingCount = (d.success && d.combos) ? d.combos.length : 0;
+        if (existingCount >= FREE_COMBO_LIMIT) {
+          showProUpgradePopup('Unlimited Combos (Free limit: ' + FREE_COMBO_LIMIT + ')');
+          return;
+        }
+        doSaveCombo(google_sub, name, comboSelectedFonts, nameInput);
+      })
+      .catch(function() {
+        doSaveCombo(google_sub, name, comboSelectedFonts, nameInput);
+      });
   } else {
-    combos.push(newCombo);
+    doSaveCombo(google_sub, name, comboSelectedFonts, nameInput);
   }
+}
 
-  localStorage.setItem('fg_saved_combos', JSON.stringify(combos));
-
-  // 如果已登录 Pro，也保存到云端
-  if (typeof saveFontCombo === 'function' && window.membershipStatus && window.membershipStatus.isPro) {
-    saveFontCombo(name, comboSelectedFonts);
-  }
-
-  // 清空输入
-  if (nameInput) nameInput.value = '';
-  comboSelectedFonts = [];
-  initComboFontSelector();
-  loadComboManageList();
-
-  showToast('Combo "' + name + '" saved!');
+function doSaveCombo(google_sub, name, fonts, nameInput) {
+  fetch('https://font-generator-api.hebiwu007.workers.dev/api/combo/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ google_sub: google_sub, name: name, fonts: fonts })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      if (nameInput) nameInput.value = '';
+      comboSelectedFonts = [];
+      initComboFontSelector();
+      loadComboManageList();
+      showToast('Combo "' + name + '" saved!');
+      if (typeof recordAction === 'function') recordAction('combo_create');
+    } else {
+      showToast(d.error || 'Failed to save combo');
+    }
+  })
+  .catch(function(e) {
+    showToast('Failed to save combo');
+  });
 }
 
 function loadComboManageList() {
   var container = document.getElementById('combo-manage-list');
   if (!container) return;
 
-  var combos = [];
-  try {
-    var saved = localStorage.getItem('fg_saved_combos');
-    if (saved) combos = JSON.parse(saved);
-  } catch (e) {}
-
-  if (combos.length === 0) {
-    container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">No combos yet. Create one below!</div>';
+  // 检查登录
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+  if (!session || !session.user) {
+    container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">Please login to manage combos</div>';
     return;
   }
 
-  container.innerHTML = '';
-  combos.forEach(function(combo) {
-    var div = document.createElement('div');
-    div.className = 'flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2';
+  // 从后端 API 加载
+  fetch('https://font-generator-api.hebiwu007.workers.dev/api/combo/list?google_sub=' + encodeURIComponent(session.user.sub))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success || !d.combos || d.combos.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">No combos yet. Create one below!</div>';
+        return;
+      }
 
-    var info = document.createElement('div');
-    info.className = 'flex-1 min-w-0';
-    info.innerHTML =
-      '<div class="font-medium text-gray-800 text-sm">' + escapeHtml(combo.name) + '</div>' +
-      '<div class="text-xs text-gray-500">' + combo.fonts.length + ' fonts: ' + combo.fonts.slice(0, 3).join(', ') + (combo.fonts.length > 3 ? '...' : '') + '</div>';
+      window._cachedCloudCombos = d.combos;
+      container.innerHTML = '';
+      d.combos.forEach(function(combo) {
+        var fonts = [];
+        try { fonts = JSON.parse(combo.fonts); } catch(e2) { fonts = combo.fonts || []; }
 
-    var actions = document.createElement('div');
-    actions.className = 'flex gap-2 ml-2';
+        var div = document.createElement('div');
+        div.className = 'flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2';
 
-    var useBtn = document.createElement('button');
-    useBtn.className = 'text-blue-600 text-xs font-medium hover:text-blue-800';
-    useBtn.textContent = 'Use';
-    useBtn.onclick = (function(c) {
-      return function() {
-        document.getElementById('combo-select').value = c.name;
-        closeComboModal();
-        showToast('Combo "' + c.name + '" selected');
-      };
-    })(combo);
+        var info = document.createElement('div');
+        info.className = 'flex-1 min-w-0';
+        info.innerHTML =
+          '<div class="font-medium text-gray-800 text-sm">' + escapeHtml(combo.name) + '</div>' +
+          '<div class="text-xs text-gray-500">' + fonts.length + ' fonts: ' + fonts.slice(0, 3).join(', ') + (fonts.length > 3 ? '...' : '') + '</div>';
 
-    var delBtn = document.createElement('button');
-    delBtn.className = 'text-red-400 text-xs font-medium hover:text-red-600';
-    delBtn.textContent = 'Delete';
-    delBtn.onclick = (function(c) {
-      return function() {
-        if (!confirm('Delete combo "' + c.name + '"?')) return;
-        deleteLocalCombo(c.name);
-        loadComboManageList();
-      };
-    })(combo);
+        var actions = document.createElement('div');
+        actions.className = 'flex gap-2 ml-2';
 
-    actions.appendChild(useBtn);
-    actions.appendChild(delBtn);
-    div.appendChild(info);
-    div.appendChild(actions);
-    container.appendChild(div);
-  });
+        var useBtn = document.createElement('button');
+        useBtn.className = 'text-blue-600 text-xs font-medium hover:text-blue-800';
+        useBtn.textContent = 'Use';
+        useBtn.onclick = (function(c) {
+          return function() {
+            document.getElementById('combo-select').value = c.name;
+            closeComboModal();
+            showToast('Combo "' + c.name + '" selected');
+          };
+        })(combo);
+
+        var delBtn = document.createElement('button');
+        delBtn.className = 'text-red-400 text-xs font-medium hover:text-red-600';
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = (function(c) {
+          return function() {
+            if (!confirm('Delete combo "' + c.name + '"?')) return;
+            deleteComboFromBackend(c.id, c.name);
+          };
+        })(combo);
+
+        actions.appendChild(useBtn);
+        actions.appendChild(delBtn);
+        div.appendChild(info);
+        div.appendChild(actions);
+        container.appendChild(div);
+      });
+    })
+    .catch(function(e) {
+      container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">Failed to load combos</div>';
+    });
 }
 
-function deleteLocalCombo(name) {
-  var combos = [];
-  try {
-    var saved = localStorage.getItem('fg_saved_combos');
-    if (saved) combos = JSON.parse(saved);
-  } catch (e) {}
-  combos = combos.filter(function(c) { return c.name !== name; });
-  localStorage.setItem('fg_saved_combos', JSON.stringify(combos));
-  // 如果有云端删除功能
-  if (typeof deleteFontCombo === 'function' && window.membershipStatus && window.membershipStatus.isPro) {
-    // 查找 combo ID 并删除（简化处理，按名称匹配）
+function deleteComboFromBackend(comboId, comboName) {
+  var session = null;
+  try { session = JSON.parse(sessionStorage.getItem('fg_user_session')); } catch(e) {}
+  if (!session || !session.user) {
+    showToast('Please login to delete combos');
+    return;
   }
-  showToast('Combo deleted');
+
+  fetch('https://font-generator-api.hebiwu007.workers.dev/api/combo/delete?id=' + comboId + '&google_sub=' + encodeURIComponent(session.user.sub), {
+    method: 'DELETE'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      showToast('Combo "' + comboName + '" deleted');
+      loadComboManageList();
+    } else {
+      showToast(d.error || 'Failed to delete combo');
+    }
+  })
+  .catch(function(e) {
+    showToast('Failed to delete combo');
+  });
 }
 
 // ==================== 页面初始化 ====================
@@ -1300,14 +1301,10 @@ function updateProUI() {
   var combosLink = document.getElementById('nav-combos');
   var historyLink = document.getElementById('nav-history');
   if (combosLink) {
-    if (isPro) {
-      combosLink.className = 'text-sm text-blue-600 font-semibold hover:text-blue-700 transition';
-      combosLink.onclick = null;
-    } else {
-      combosLink.className = 'text-sm text-gray-400 font-semibold cursor-pointer transition hover:text-gray-600';
-      combosLink.href = 'javascript:void(0)';
-      combosLink.onclick = function() { checkProAndShowUpgrade('Combos'); };
-    }
+    // Combos 现在所有用户都可以使用（有数量限制），直接跳转
+    combosLink.className = 'text-sm text-blue-600 font-semibold hover:text-blue-700 transition';
+    combosLink.href = 'combo.html';
+    combosLink.onclick = null;
   }
   if (historyLink) {
     if (isPro) {
