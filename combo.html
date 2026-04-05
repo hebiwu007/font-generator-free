@@ -94,7 +94,7 @@
             <button onclick="showCreateModal()" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">Create Combo</button>
         </div>
 
-        <p class="text-gray-500 text-sm mt-6">Free users can create up to 3 combos. <a href="pricing.html" class="text-blue-600 font-semibold">Upgrade to Pro</a> for unlimited combos.</p>
+        <p class="text-gray-500 text-sm mt-6">Saved Combos is a Pro feature. <a href="pricing.html" class="text-blue-600 font-semibold">Upgrade to Pro</a> to create and manage font combos.</p>
     </div>
 
     <!-- Create combo modal -->
@@ -138,7 +138,7 @@
     <script>
     var GOOGLE_CLIENT_ID = '1070692973169-kh4nort1uo59s8oq2159dqn6pc0cfp6e.apps.googleusercontent.com';
     var API_BASE = 'https://font-generator-api.hebiwu007.workers.dev';
-    var FREE_LIMIT = 3;
+    var FREE_LIMIT = 0; // Free users cannot save combos at all (Pro only)
     var FG_SESSION_KEY = 'fg_user_session';
     var fontNames = ['Bold','Italic','Bold Italic','Cursive','Bold Cursive','Double Struck','Bubble','Black Bubble','Gothic','Bold Gothic','Square','Black Square','Monospace','Upside Down','Small Caps','Subscript','Superscript','Strikethrough','Underline','Wide','Parenthesized','Tiny','Zalgo','Crossed','Arrow','Heart','Star','Dot','Bracket','Wave'];
     var selectedFonts = [];
@@ -447,8 +447,9 @@
 
     // === Actions ===
     window.showCreateModal = function() {
-        if (!isPro && loadedCombos.length >= FREE_LIMIT) {
-            showToast('Free limit reached (' + FREE_LIMIT + ' combos). Upgrade to Pro!');
+        // Saved Combos 是 Pro 功能
+        if (!isPro) {
+            showToast('Saved Combos is a Pro feature. Please upgrade!');
             setTimeout(function() { window.location.href = 'pricing.html'; }, 1500);
             return;
         }

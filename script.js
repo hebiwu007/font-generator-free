@@ -780,8 +780,9 @@ function groupResults(results, format) {
 
 // ==================== Batch 模式 - 下载 ====================
 
-// 📄 TXT 下载（改为 HTML 格式确保字体正确显示）
+// 📄 TXT/HTML 下载 — Pro 功能
 function downloadAsTXT() {
+  if (!checkProAndShowUpgrade('HTML Download')) return;
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
   var format = getOutputFormat();
@@ -796,8 +797,9 @@ function downloadAsTXT() {
   showToast('HTML downloaded!');
 }
 
-// 📁 ZIP 下载（按 Output Format 决定文件结构）
+// 📁 ZIP 下载（按 Output Format 决定文件结构）— Pro 功能
 function downloadAsZIP() {
+  if (!checkProAndShowUpgrade('ZIP Download')) return;
   var results = window._batchResults;
   if (!results || !results.length) { showToast('No results'); return; }
   if (typeof JSZip === 'undefined') { showToast('ZIP library not loaded'); return; }
@@ -853,7 +855,7 @@ function downloadAsZIP() {
 
 // ==================== 权限校验系统 ====================
 
-var FREE_COMBO_LIMIT = 3;
+var FREE_COMBO_LIMIT = 0; // Free users cannot save combos at all (Pro only)
 
 function isProUser() {
   // 必须先登录 Google
@@ -1106,24 +1108,12 @@ function saveNewCombo() {
 
   var google_sub = session.user.sub;
 
-  // 免费用户 Combo 数量限制 — 先查询后端已有数量
+  // Saved Combos 是 Pro 功能
   if (!isProUser()) {
-    fetch('https://font-generator-api.hebiwu007.workers.dev/api/combo/list?google_sub=' + encodeURIComponent(google_sub))
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        var existingCount = (d.success && d.combos) ? d.combos.length : 0;
-        if (existingCount >= FREE_COMBO_LIMIT) {
-          showProUpgradePopup('Unlimited Combos (Free limit: ' + FREE_COMBO_LIMIT + ')');
-          return;
-        }
-        doSaveCombo(google_sub, name, comboSelectedFonts, nameInput);
-      })
-      .catch(function() {
-        doSaveCombo(google_sub, name, comboSelectedFonts, nameInput);
-      });
-  } else {
-    doSaveCombo(google_sub, name, comboSelectedFonts, nameInput);
+    showProUpgradePopup('Saved Combos');
+    return;
   }
+  doSaveCombo(google_sub, name, comboSelectedFonts, nameInput);
 }
 
 function doSaveCombo(google_sub, name, fonts, nameInput) {
@@ -1293,7 +1283,7 @@ function updateProUI() {
     }
   }
   // Pro 用户隐藏下载按钮的 PRO 标签
-  var tags = document.querySelectorAll('#png-pro-tag, #pdf-pro-tag');
+  var tags = document.querySelectorAll('#png-pro-tag, #pdf-pro-tag, #html-pro-tag, #zip-pro-tag');
   tags.forEach(function(tag) {
     tag.style.display = isPro ? 'none' : 'inline';
   });
@@ -1301,10 +1291,16 @@ function updateProUI() {
   var combosLink = document.getElementById('nav-combos');
   var historyLink = document.getElementById('nav-history');
   if (combosLink) {
-    // Combos 现在所有用户都可以使用（有数量限制），直接跳转
-    combosLink.className = 'text-sm text-blue-600 font-semibold hover:text-blue-700 transition';
-    combosLink.href = 'combo.html';
-    combosLink.onclick = null;
+    // Saved Combos 是 Pro 功能
+    if (isPro) {
+      combosLink.className = 'text-sm text-blue-600 font-semibold hover:text-blue-700 transition';
+      combosLink.href = 'combo.html';
+      combosLink.onclick = null;
+    } else {
+      combosLink.className = 'text-sm text-gray-400 font-semibold cursor-pointer transition hover:text-gray-600';
+      combosLink.href = 'javascript:void(0)';
+      combosLink.onclick = function(e) { e.preventDefault(); showProUpgradePopup('Saved Combos'); };
+    }
   }
   if (historyLink) {
     if (isPro) {
