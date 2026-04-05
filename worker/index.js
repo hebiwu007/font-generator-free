@@ -1,3 +1,5 @@
+import { handleCreateOrder, handleWebhook, handleCaptureOrder } from './payment.js';
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -12,6 +14,23 @@ export default {
     }
 
     try {
+
+      // ==================== PayPal Payment APIs ====================
+
+      // POST /api/payment/create-order — 创建 PayPal 订单
+      if (url.pathname === '/api/payment/create-order' && request.method === 'POST') {
+        return await handleCreateOrder(request, env, corsHeaders);
+      }
+
+      // POST /api/payment/capture — 捕获 PayPal 支付
+      if (url.pathname === '/api/payment/capture' && request.method === 'POST') {
+        return await handleCaptureOrder(request, env, corsHeaders);
+      }
+
+      // POST /api/payment/webhook — PayPal Webhook 回调（带签名验证）
+      if (url.pathname === '/api/payment/webhook' && request.method === 'POST') {
+        return await handleWebhook(request, env, corsHeaders);
+      }
 
       // POST /api/pro/save — 支付成功后保存 Pro 状态
       if (url.pathname === '/api/pro/save' && request.method === 'POST') {
@@ -281,6 +300,17 @@ async function ensureTables(env) {
       )
     `),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_font_combos_google_sub ON font_combos(google_sub)`),
+    env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS webhook_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id TEXT UNIQUE NOT NULL,
+        event_type TEXT NOT NULL,
+        status TEXT DEFAULT 'received',
+        google_id TEXT,
+        created_at TEXT
+      )
+    `),
+    env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id)`),
   ]);
 }
 
