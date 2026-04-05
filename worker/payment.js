@@ -21,6 +21,41 @@ async function getPayPalAccessToken(env) {
   return data.access_token;
 }
 
+// ==================== 到期时间计算 ====================
+
+const THIRTY_DAYS = 30 * 24 * 3600;
+
+/**
+ * 计算续费后的到期时间
+ * 
+ * 规则：
+ * - lifetime: 永不过期，返回 null
+ * - monthly 首次购买: now + 30天
+ * - monthly 续费（未到期）: 当前到期时间 + 30天（不丢失剩余时间）
+ * - monthly 续费（已到期）: now + 30天
+ * - monthly 升级 lifetime: 返回 null（永不过期）
+ */
+async function calculateExpiry(env, googleId, planType, now) {
+  // lifetime 永不过期
+  if (planType === 'lifetime') {
+    return null;
+  }
+
+  // monthly: 查询当前到期时间
+  const user = await env.DB.prepare(
+    'SELECT subscription_expires_at FROM users WHERE google_id = ?'
+  ).bind(googleId).first();
+
+  if (user && user.subscription_expires_at && user.subscription_expires_at > now) {
+    // 当前未到期 → 在剩余时间基础上追加 30 天
+    console.log('[Expiry] Renewal: extending from', user.subscription_expires_at, 'to', user.subscription_expires_at + THIRTY_DAYS);
+    return user.subscription_expires_at + THIRTY_DAYS;
+  }
+
+  // 首次购买或已到期 → 从现在起算 30 天
+  return now + THIRTY_DAYS;
+}
+
 // ==================== Webhook 签名验证 ====================
 
 /**
@@ -373,13 +408,13 @@ export async function handleWebhook(request, env, corsHeaders) {
       const amount = resource.amount?.value;
       const currency = resource.amount?.currency_code || 'USD';
 
-      // 更新用户会员状态
-      const now = Math.floor(Date.now() / 1000);
-      
       // 根据金额判断 planType
       const planType = parseFloat(amount) >= 9.99 ? 'lifetime' : 'monthly';
-      const expiresAt = planType === 'monthly' ? now + 30 * 24 * 3600 : null;
-      
+      const now = Math.floor(Date.now() / 1000);
+
+      // 计算到期时间：如果当前未到期，在剩余时间基础上追加；否则从现在起算
+      const expiresAt = await calculateExpiry(env, googleId, planType, now);
+
       await env.DB.prepare(
         'UPDATE users SET subscription_tier = ?, subscription_expires_at = ?, updated_at = ? WHERE google_id = ?'
       ).bind(planType, expiresAt, now, googleId).run();
@@ -393,7 +428,7 @@ export async function handleWebhook(request, env, corsHeaders) {
       // 记录 webhook 事件
       await recordWebhookEvent(env, event, 'processed', googleId);
       
-      console.log('[Webhook] User upgraded:', googleId, 'plan:', planType, 'amount:', amount, currency);
+      console.log('[Webhook] User upgraded:', googleId, 'plan:', planType, 'amount:', amount, currency, 'expires:', expiresAt);
     } 
     else if (event.event_type === 'CHECKOUT.ORDER.COMPLETED') {
       // checkout.order.completed 包含完整订单信息
@@ -414,7 +449,7 @@ export async function handleWebhook(request, env, corsHeaders) {
       const planType = description.includes('Monthly') ? 'monthly' : 'lifetime';
 
       const now = Math.floor(Date.now() / 1000);
-      const expiresAt = planType === 'monthly' ? now + 30 * 24 * 3600 : null;
+      const expiresAt = await calculateExpiry(env, googleId, planType, now);
       
       await env.DB.prepare(
         'UPDATE users SET subscription_tier = ?, subscription_expires_at = ?, updated_at = ? WHERE google_id = ?'
@@ -497,7 +532,7 @@ export async function handleCaptureOrder(request, env, corsHeaders) {
     if (captureData.status === 'COMPLETED') {
       // 更新用户会员状态
       const now = Math.floor(Date.now() / 1000);
-      const expiresAt = planType === 'monthly' ? now + 30 * 24 * 3600 : null;
+      const expiresAt = await calculateExpiry(env, googleId, planType, now);
       
       await env.DB.prepare(
         'UPDATE users SET subscription_tier = ?, subscription_expires_at = ?, updated_at = ? WHERE google_id = ?'

@@ -27,8 +27,8 @@ export default {
         return await handleCaptureOrder(request, env, corsHeaders);
       }
 
-      // POST /api/payment/webhook — PayPal Webhook 回调（带签名验证）
-      if (url.pathname === '/api/payment/webhook' && request.method === 'POST') {
+      // POST /api/paypal/webhook — PayPal Webhook 回调（带签名验证）
+      if (url.pathname === '/api/paypal/webhook' && request.method === 'POST') {
         return await handleWebhook(request, env, corsHeaders);
       }
 
